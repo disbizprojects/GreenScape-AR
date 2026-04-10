@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GreenScape AR
 
-## Getting Started
+Next.js marketplace for browsing plants, placing **real-device AR** previews (WebXR / Scene Viewer / AR Quick Look via `@google/model-viewer`), and running **sunlight**, **weather**, and **survival** heuristics tied to a map pin (OpenStreetMap + Open-Meteo — no paid map/weather keys required).
 
-First, run the development server:
+## Stack
+
+- **Framework:** Next.js (App Router), TypeScript  
+- **UI:** Tailwind CSS  
+- **Database:** MongoDB with Mongoose  
+- **Auth:** NextAuth (credentials)  
+- **Payments:** Stripe Checkout (optional in dev)  
+- **AR:** `@google/model-viewer` + hosted **GLB** URLs per plant  
+
+## Prerequisites
+
+- Node.js 20+  
+- MongoDB running locally or a hosted URI (Atlas, etc.)
+
+## Setup
+
+1. Copy `.env.example` to `.env.local` and set `MONGODB_URI`, `NEXTAUTH_SECRET`, and `NEXTAUTH_URL` (for local dev: `http://localhost:3000`).
+
+2. Install and run:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Seed demo users and plants (set `SEED_SECRET` in `.env.local` to match):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+curl -X POST http://localhost:3000/api/seed -H "x-seed-secret: YOUR_SEED_SECRET"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Demo logins (after seed):
 
-## Learn More
+- **Admin:** `ADMIN_EMAIL` from env (default `admin@greenscape.local`) / `Demo12345!`  
+- **Vendor:** `vendor@greenscape.local` / `Demo12345!`  
+- **Customer:** `customer@greenscape.local` / `Demo12345!`  
 
-To learn more about Next.js, take a look at the following resources:
+## Vendor uploads (Cloudinary)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Cover photos and **`.glb`** models are uploaded from **Vendor studio** via `POST /api/upload` (vendors/admins only). Add **`CLOUDINARY_CLOUD_NAME`**, **`CLOUDINARY_API_KEY`**, and **`CLOUDINARY_API_SECRET`** from the Cloudinary dashboard to `.env.local`, then restart the dev server. If Cloudinary is not set, the form shows a notice and you can still paste HTTPS URLs under **Optional: paste URL instead**.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Stripe (optional)
 
-## Deploy on Vercel
+Add `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, and `STRIPE_WEBHOOK_SECRET`. Point the webhook to `/api/webhooks/stripe`. Without keys, checkout shows a clear error — orders can still be created for UI testing if you add a manual “mark paid” path later.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## AR on phones
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Android (Chrome):** open any **AR experience** route; use **View in your space** when the browser offers it (WebXR / Scene Viewer).  
+- **iOS (Safari):** AR Quick Look is used when the browser and model support it.  
+- Replace demo GLB URLs in seed/vendor forms with your own plant assets for production.
+
+## Plant disease scan
+
+Set `PLANT_ID_API_KEY` for live identification; otherwise `/api/disease` returns a structured mock response.
+
+## Project layout (high level)
+
+- `src/app` — pages (marketplace, AR workspace, dashboards, auth)  
+- `src/app/api` — REST handlers (plants, cart, orders, analysis, Stripe, admin)  
+- `src/models` — Mongoose schemas  
+- `src/lib` — weather (Open-Meteo), sunlight heuristics (`suncalc`), survival scoring  
+- `src/components` — `ModelViewerPlant`, Leaflet map  
+
+## Deploy (Vercel)
+
+Set environment variables in the Vercel project. Use a MongoDB Atlas URI for `MONGODB_URI`. Configure Stripe webhook URL for production.
