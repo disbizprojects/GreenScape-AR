@@ -2,10 +2,10 @@
   "buildCommand": "npm run build",
   "framework": "nextjs",
   "functions": {
-    "api/**/*.ts": {
+    "src/app/api/**/*.ts": {
       "maxDuration": 30
     },
-    "api/webhooks/**/*.ts": {
+    "src/app/api/webhooks/**/*.ts": {
       "maxDuration": 60
     }
   },
