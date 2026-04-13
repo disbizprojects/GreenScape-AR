@@ -1,68 +1,43 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "env": [
-    {
-      "key": "MONGODB_URI",
-      "description": "MongoDB connection string. Get from MongoDB Atlas.",
-      "type": "secret"
+  "env": {
+    "MONGODB_URI": {
+      "description": "MongoDB connection string. Get from MongoDB Atlas."
     },
-    {
-      "key": "NEXTAUTH_URL",
-      "description": "Your production domain (e.g., https://your-domain.com)",
-      "type": "secret"
+    "NEXTAUTH_URL": {
+      "description": "Your production domain (e.g., https://your-domain.com)"
     },
-    {
-      "key": "NEXTAUTH_SECRET",
-      "description": "Secret for NextAuth. Generate with: openssl rand -base64 32",
-      "type": "secret"
+    "NEXTAUTH_SECRET": {
+      "description": "Secret for NextAuth. Generate with: openssl rand -base64 32"
     },
-    {
-      "key": "STRIPE_SECRET_KEY",
-      "description": "Stripe secret API key (from dashboard, not publishable key)",
-      "type": "secret"
+    "STRIPE_SECRET_KEY": {
+      "description": "Stripe secret API key (from dashboard, not publishable key)"
     },
-    {
-      "key": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
-      "description": "Stripe publishable key (safe for frontend)",
-      "type": "secret"
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": {
+      "description": "Stripe publishable key (safe for frontend)"
     },
-    {
-      "key": "STRIPE_WEBHOOK_SECRET",
-      "description": "Stripe webhook signing secret (from webhooks dashboard)",
-      "type": "secret"
+    "STRIPE_WEBHOOK_SECRET": {
+      "description": "Stripe webhook signing secret (from webhooks dashboard)"
     },
-    {
-      "key": "CLOUDINARY_CLOUD_NAME",
-      "description": "Your Cloudinary cloud name",
-      "type": "secret"
+    "CLOUDINARY_CLOUD_NAME": {
+      "description": "Your Cloudinary cloud name"
     },
-    {
-      "key": "CLOUDINARY_API_KEY",
-      "description": "Your Cloudinary API key",
-      "type": "secret"
+    "CLOUDINARY_API_KEY": {
+      "description": "Your Cloudinary API key"
     },
-    {
-      "key": "CLOUDINARY_API_SECRET",
-      "description": "Your Cloudinary API secret (never expose to frontend)",
-      "type": "secret"
+    "CLOUDINARY_API_SECRET": {
+      "description": "Your Cloudinary API secret (never expose to frontend)"
     },
-    {
-      "key": "ADMIN_EMAIL",
-      "description": "Email for default admin user",
-      "type": "secret"
+    "ADMIN_EMAIL": {
+      "description": "Email for default admin user"
     },
-    {
-      "key": "SEED_SECRET",
-      "description": "Secret to authorize /api/seed endpoint",
-      "type": "secret"
+    "SEED_SECRET": {
+      "description": "Secret to authorize /api/seed endpoint"
     },
-    {
-      "key": "PLANT_ID_API_KEY",
-      "description": "Optional: Plant.id API key for disease detection",
-      "type": "secret",
-      "value": ""
+    "PLANT_ID_API_KEY": {
+      "description": "Optional: Plant.id API key for disease detection"
     }
-  ],
+  },
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "framework": "nextjs",
