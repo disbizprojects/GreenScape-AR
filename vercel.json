@@ -1,45 +1,5 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "env": {
-    "MONGODB_URI": {
-      "description": "MongoDB connection string. Get from MongoDB Atlas."
-    },
-    "NEXTAUTH_URL": {
-      "description": "Your production domain (e.g., https://your-domain.com)"
-    },
-    "NEXTAUTH_SECRET": {
-      "description": "Secret for NextAuth. Generate with: openssl rand -base64 32"
-    },
-    "STRIPE_SECRET_KEY": {
-      "description": "Stripe secret API key (from dashboard, not publishable key)"
-    },
-    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": {
-      "description": "Stripe publishable key (safe for frontend)"
-    },
-    "STRIPE_WEBHOOK_SECRET": {
-      "description": "Stripe webhook signing secret (from webhooks dashboard)"
-    },
-    "CLOUDINARY_CLOUD_NAME": {
-      "description": "Your Cloudinary cloud name"
-    },
-    "CLOUDINARY_API_KEY": {
-      "description": "Your Cloudinary API key"
-    },
-    "CLOUDINARY_API_SECRET": {
-      "description": "Your Cloudinary API secret (never expose to frontend)"
-    },
-    "ADMIN_EMAIL": {
-      "description": "Email for default admin user"
-    },
-    "SEED_SECRET": {
-      "description": "Secret to authorize /api/seed endpoint"
-    },
-    "PLANT_ID_API_KEY": {
-      "description": "Optional: Plant.id API key for disease detection"
-    }
-  },
   "buildCommand": "npm run build",
-  "installCommand": "npm install",
   "framework": "nextjs",
   "functions": {
     "api/**/*.ts": {
