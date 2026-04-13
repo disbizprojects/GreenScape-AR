@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "pre-deploy": "node scripts/pre-deploy-check.js",
+    "pre-deploy:ci": "npm run lint && npm run pre-deploy"
   },
   "dependencies": {
     "@google/model-viewer": "^4.2.0",

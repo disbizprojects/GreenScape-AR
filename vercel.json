@@ -1,0 +1,115 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "env": [
+    {
+      "key": "MONGODB_URI",
+      "description": "MongoDB connection string. Get from MongoDB Atlas.",
+      "type": "secret"
+    },
+    {
+      "key": "NEXTAUTH_URL",
+      "description": "Your production domain (e.g., https://your-domain.com)",
+      "type": "secret"
+    },
+    {
+      "key": "NEXTAUTH_SECRET",
+      "description": "Secret for NextAuth. Generate with: openssl rand -base64 32",
+      "type": "secret"
+    },
+    {
+      "key": "STRIPE_SECRET_KEY",
+      "description": "Stripe secret API key (from dashboard, not publishable key)",
+      "type": "secret"
+    },
+    {
+      "key": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+      "description": "Stripe publishable key (safe for frontend)",
+      "type": "secret"
+    },
+    {
+      "key": "STRIPE_WEBHOOK_SECRET",
+      "description": "Stripe webhook signing secret (from webhooks dashboard)",
+      "type": "secret"
+    },
+    {
+      "key": "CLOUDINARY_CLOUD_NAME",
+      "description": "Your Cloudinary cloud name",
+      "type": "secret"
+    },
+    {
+      "key": "CLOUDINARY_API_KEY",
+      "description": "Your Cloudinary API key",
+      "type": "secret"
+    },
+    {
+      "key": "CLOUDINARY_API_SECRET",
+      "description": "Your Cloudinary API secret (never expose to frontend)",
+      "type": "secret"
+    },
+    {
+      "key": "ADMIN_EMAIL",
+      "description": "Email for default admin user",
+      "type": "secret"
+    },
+    {
+      "key": "SEED_SECRET",
+      "description": "Secret to authorize /api/seed endpoint",
+      "type": "secret"
+    },
+    {
+      "key": "PLANT_ID_API_KEY",
+      "description": "Optional: Plant.id API key for disease detection",
+      "type": "secret",
+      "value": ""
+    }
+  ],
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "nodejs": "20.x",
+  "functions": {
+    "api/**/*.ts": {
+      "maxDuration": 30
+    },
+    "api/webhooks/**/*.ts": {
+      "maxDuration": 60
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/_next/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/seed",
+      "destination": "/api/seed",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/api/robots"
+    }
+  ]
+}
