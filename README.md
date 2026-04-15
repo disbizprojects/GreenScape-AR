@@ -55,7 +55,49 @@ Add `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, and `STRIPE_WEBHO
 
 ## Plant disease scan
 
-Set `PLANT_ID_API_KEY` for live identification; otherwise `/api/disease` returns a structured mock response.
+The app includes an **AI-powered leaf health scanner** that detects plant diseases using plant images.
+
+### Using Plant.id API (Recommended for production)
+
+1. **Sign up at** https://plant.id/
+2. **Get your API key** from your account dashboard
+3. **Add to `.env.local`:**
+   ```env
+   PLANT_ID_API_KEY=your-api-key-here
+   ```
+4. **Features:**
+   - 🌱 Plant identification from leaf images
+   - 🔍 Automatic disease detection
+   - 💊 Treatment recommendations
+   - **Free tier:** ~100 requests/month
+
+### Testing without API Key
+
+Visit `/disease` page to test the UI with mock data. Mock response includes:
+- Sample plant identification
+- Demo disease detection
+- Treatment recommendations
+
+When `PLANT_ID_API_KEY` is set, the app switches to live detection automatically.
+
+## Watering Schedule & Email Notifications
+
+The AR Analysis workspace now features a **three-step analysis flow** with email notifications:
+
+1. **Sunlight Analysis** → Evaluates sun compatibility (Full sun, Partial shade, Full shade)
+2. **Survival Analysis** → Calculates survival percentage based on weather & location
+3. **Watering Schedule** → Generates personalized watering dates and sends an email to the user
+
+To enable email notifications:
+- Set `GMAIL_USER` and `GMAIL_PASSWORD` in `.env.local`
+- Generate a Gmail App Password (not your regular Gmail password):
+  1. Enable 2FA on your Google account
+  2. Visit https://myaccount.google.com/apppasswords
+  3. Select "Mail" and "Windows Computer"
+  4. Copy the 16-character password
+  5. Use it for `GMAIL_PASSWORD`
+
+Without Gmail credentials, the watering schedule is still created but email notifications are skipped.
 
 ## Project layout (high level)
 

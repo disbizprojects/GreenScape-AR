@@ -42,6 +42,11 @@ export function ArClient({ plant }: { plant: Plant }) {
 
   const [growthMonths, setGrowthMonths] = useState(6);
 
+  // Track analysis stages
+  const [sunlightDone, setSunlightDone] = useState(false);
+  const [survivalDone, setSurvivalDone] = useState(false);
+  const [wateringDone, setWateringDone] = useState(false);
+
   const growthScale = useMemo(() => {
     const years = growthMonths / 12;
     return 1 + plant.growthScalePerYear * years;
@@ -59,24 +64,70 @@ export function ArClient({ plant }: { plant: Plant }) {
     );
   }, []);
 
-  const runAnalysis = useCallback(async () => {
+  const runSunlightAnalysis = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const res = await fetch("/api/analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plantId: plant._id, lat, lng }),
+        body: JSON.stringify({ plantId: plant._id, lat, lng, stage: "sunlight" }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Analysis failed");
       setAnalysis(j);
+      setSunlightDone(true);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Error");
     } finally {
       setLoading(false);
     }
   }, [lat, lng, plant._id]);
+
+  const runSurvivalAnalysis = useCallback(async () => {
+    setLoading(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plantId: plant._id, lat, lng, stage: "survival" }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error ?? "Analysis failed");
+      setAnalysis(j);
+      setSurvivalDone(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Error");
+    } finally {
+      setLoading(false);
+    }
+  }, [lat, lng, plant._id]);
+
+  const createWateringSchedule = useCallback(async () => {
+    setLoading(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/care/watering", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          plantId: plant._id, 
+          lat, 
+          lng,
+          plantName: plant.name,
+          wateringSchedule: analysis?.watering,
+        }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error ?? "Failed to create watering schedule");
+      setWateringDone(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Error");
+    } finally {
+      setLoading(false);
+    }
+  }, [lat, lng, plant._id, plant.name, analysis?.watering]);
 
   return (
     <div className="space-y-8">
@@ -129,14 +180,65 @@ export function ArClient({ plant }: { plant: Plant }) {
         </div>
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-emerald-950">Environmental analysis</h2>
-          <button
-            type="button"
-            onClick={runAnalysis}
-            disabled={loading}
-            className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-          >
-            {loading ? "Running…" : "Run sunlight & survival analysis"}
-          </button>
+          <div className="space-y-2">
+            {/* Step 1: Sunlight Analysis */}
+            {!sunlightDone && (
+              <button
+                type="button"
+                onClick={runSunlightAnalysis}
+                disabled={loading}
+                className="w-full rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {loading ? "Analyzing…" : "1. Run Sunlight Analysis"}
+              </button>
+            )}
+            {sunlightDone && !survivalDone && (
+              <div className="space-y-2">
+                <div className="rounded-full bg-emerald-100 px-5 py-2.5 text-sm font-semibold text-emerald-900">
+                  ✓ Sunlight Analysis Complete
+                </div>
+                <button
+                  type="button"
+                  onClick={runSurvivalAnalysis}
+                  disabled={loading}
+                  className="w-full rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                >
+                  {loading ? "Analyzing…" : "2. Run Survival Analysis"}
+                </button>
+              </div>
+            )}
+            {survivalDone && !wateringDone && (
+              <div className="space-y-2">
+                <div className="rounded-full bg-emerald-100 px-5 py-2.5 text-sm font-semibold text-emerald-900">
+                  ✓ Sunlight Analysis Complete
+                </div>
+                <div className="rounded-full bg-emerald-100 px-5 py-2.5 text-sm font-semibold text-emerald-900">
+                  ✓ Survival Analysis Complete
+                </div>
+                <button
+                  type="button"
+                  onClick={createWateringSchedule}
+                  disabled={loading}
+                  className="w-full rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {loading ? "Creating schedule…" : "3. Create Watering Schedule & Send Email"}
+                </button>
+              </div>
+            )}
+            {wateringDone && (
+              <div className="space-y-2">
+                <div className="rounded-full bg-emerald-100 px-5 py-2.5 text-sm font-semibold text-emerald-900">
+                  ✓ Sunlight Analysis Complete
+                </div>
+                <div className="rounded-full bg-emerald-100 px-5 py-2.5 text-sm font-semibold text-emerald-900">
+                  ✓ Survival Analysis Complete
+                </div>
+                <div className="rounded-full bg-blue-100 px-5 py-2.5 text-sm font-semibold text-blue-900">
+                  ✓ Watering Schedule Created & Email Sent
+                </div>
+              </div>
+            )}
+          </div>
           {err ? <p className="text-sm text-red-600">{err}</p> : null}
           {analysis ? (
             <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 text-sm">
@@ -149,34 +251,40 @@ export function ArClient({ plant }: { plant: Plant }) {
                   {analysis.weather.cloudCoverPct}%
                 </p>
               </div>
-              <div>
-                <p className="font-semibold text-emerald-900">Sunlight match</p>
-                <p className="text-zinc-700">
-                  {analysis.sunlight.label} ({analysis.sunlight.compatibilityScore}/100)
-                </p>
-                <p className="text-zinc-600">{analysis.sunlight.summary}</p>
-              </div>
-              <div>
-                <p className="font-semibold text-emerald-900">Survival estimate</p>
-                <p className="text-zinc-700">{analysis.survival.survivalPct}%</p>
-                <ul className="list-disc pl-5 text-zinc-600">
-                  {analysis.survival.factors.map((f) => (
-                    <li key={f}>{f}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="font-semibold text-emerald-900">Watering</p>
-                <p className="text-zinc-700">
-                  Next suggested: {new Date(analysis.watering.nextSuggestedWater).toLocaleString()}
-                  {analysis.watering.adjustedForRain ? " (rain-adjusted)" : ""}
-                </p>
-                <ul className="list-disc pl-5 text-zinc-600">
-                  {analysis.watering.notes.map((n) => (
-                    <li key={n}>{n}</li>
-                  ))}
-                </ul>
-              </div>
+              {sunlightDone && (
+                <div>
+                  <p className="font-semibold text-emerald-900">Sunlight match</p>
+                  <p className="text-zinc-700">
+                    {analysis.sunlight.label} ({analysis.sunlight.compatibilityScore}/100)
+                  </p>
+                  <p className="text-zinc-600">{analysis.sunlight.summary}</p>
+                </div>
+              )}
+              {survivalDone && (
+                <div>
+                  <p className="font-semibold text-emerald-900">Survival estimate</p>
+                  <p className="text-zinc-700">{analysis.survival.survivalPct}%</p>
+                  <ul className="list-disc pl-5 text-zinc-600">
+                    {analysis.survival.factors.map((f) => (
+                      <li key={f}>{f}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {wateringDone && (
+                <div>
+                  <p className="font-semibold text-emerald-900">Watering Schedule</p>
+                  <p className="text-zinc-700">
+                    Next suggested: {new Date(analysis.watering.nextSuggestedWater).toLocaleString()}
+                    {analysis.watering.adjustedForRain ? " (rain-adjusted)" : ""}
+                  </p>
+                  <ul className="list-disc pl-5 text-zinc-600">
+                    {analysis.watering.notes.map((n) => (
+                      <li key={n}>{n}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           ) : null}
         </div>

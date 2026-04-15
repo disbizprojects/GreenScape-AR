@@ -62,9 +62,26 @@ Service registrations needed:
    → Verify credentials are correct and still valid
    → Create folders: greenscape-ar/covers and greenscape-ar/models
 
-🔄 Plant.id - Optional for disease detection
-   → Skip unless you want real disease detection
-   → Set PLANT_ID_API_KEY if enabled
+✅ Gmail - For watering schedule notifications
+   → Steps:
+      1. Go to https://myaccount.google.com/apppasswords
+      2. Enable 2FA on your Google account (if not already)
+      3. Generate an App Password for "Mail" & "Windows Computer"
+      4. Copy the 16-character password
+      5. Set GMAIL_USER = your-email@gmail.com
+      6. Set GMAIL_PASSWORD = the-app-password (not your regular Gmail password!)
+   → Note: Regular Gmail passwords won't work with nodemailer
+
+⚠️ Plant.id - For plant disease detection & identification
+   → Free tier: ~100 API calls/month (good for testing)
+   → Paid: Unlimited calls (~$1.99/month to start)
+   → Steps:
+      1. Sign up at https://plant.id/
+      2. Go to Account → API Keys
+      3. Copy your API key
+      4. Set PLANT_ID_API_KEY = your-api-key
+   → Without key: Mock data is shown (good for UI testing)
+   → With key: Live disease detection and plant identification
 ```
 
 ### Step 2: Generate Secure Secrets (5 minutes)
@@ -157,7 +174,9 @@ curl -X POST https://your-vercel-domain.vercel.app/api/seed \
 | `CLOUDINARY_API_SECRET` | ✅ Yes | ✅ Configured | Already in .env.local |
 | `ADMIN_EMAIL` | ✅ Yes | ✅ Set | admin@greenscape.local (change if needed) |
 | `SEED_SECRET` | ✅ Yes | ⚠️ Generate new | For /api/seed endpoint auth |
-| `PLANT_ID_API_KEY` | ❌ Optional | ⚠️ Empty | Only needed for disease detection |
+| `PLANT_ID_API_KEY` | ⚠️ Recommended | ⚠️ Missing | For live disease detection & plant ID |
+| `GMAIL_USER` | ✅ Yes | ⚠️ Missing | Gmail address for watering notifications |
+| `GMAIL_PASSWORD` | ✅ Yes | ⚠️ Missing | Gmail App Password (not regular password) |
 
 ---
 
