@@ -104,14 +104,20 @@ export default function DashboardPage() {
         </div>
       ) : null}
 
-      <div className="mt-10 flex flex-wrap gap-3 text-sm">
-        <Link href="/orders" className="text-emerald-700 hover:underline">
+      <div className="mt-10 flex flex-wrap items-center gap-4 text-sm">
+        <Link 
+          href="/dashboard/watering-schedule" 
+          className="rounded-md bg-blue-100 px-4 py-2 font-semibold text-blue-800 hover:bg-blue-200 flex items-center gap-2 shadow-sm"
+        >
+           Smart Watering Schedule
+        </Link>
+        <Link href="/orders" className="text-emerald-700 hover:underline px-2">
           Orders
         </Link>
-        <Link href="/profile" className="text-emerald-700 hover:underline">
+        <Link href="/profile" className="text-emerald-700 hover:underline px-2">
           Profile & addresses
         </Link>
-        <Link href="/plants" className="text-emerald-700 hover:underline">
+        <Link href="/plants" className="text-emerald-700 hover:underline px-2">
           Browse plants
         </Link>
       </div>
