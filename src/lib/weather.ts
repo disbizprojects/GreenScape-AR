@@ -63,3 +63,4 @@ export async function fetchForecastRainDays(
   };
   return data.daily.precipitation_sum;
 }
+
