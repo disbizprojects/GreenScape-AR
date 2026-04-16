@@ -7,13 +7,6 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  if (!stripeEnabled() || !stripe) {
-    return NextResponse.json(
-      { error: "Stripe is not configured. Set STRIPE_SECRET_KEY in .env.local." },
-      { status: 503 }
-    );
-  }
-
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -31,6 +24,14 @@ export async function POST(req: Request) {
   }
   if (order.paymentStatus === "PAID") {
     return NextResponse.json({ error: "Already paid" }, { status: 400 });
+  }
+
+  if (!stripeEnabled() || !stripe) {
+    return NextResponse.json({
+      mock: true,
+      orderId: order._id.toString(),
+      message: "Stripe is not configured. Complete payment with mock flow.",
+    });
   }
 
   const origin = new URL(req.url).origin;
@@ -59,13 +60,6 @@ export async function POST(req: Request) {
 
 /** Create order from cart + return checkout URL in one step */
 export async function PUT(req: Request) {
-  if (!stripeEnabled() || !stripe) {
-    return NextResponse.json(
-      { error: "Stripe is not configured." },
-      { status: 503 }
-    );
-  }
-
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -129,6 +123,17 @@ export async function PUT(req: Request) {
     tracking: [{ status: "PENDING_PAYMENT", at: new Date() }],
   });
 
+  cart.items = [];
+  await cart.save();
+
+  if (!stripeEnabled() || !stripe) {
+    return NextResponse.json({
+      mock: true,
+      orderId: order._id.toString(),
+      message: "Order created. Complete payment with mock flow.",
+    });
+  }
+
   const origin = new URL(req.url).origin;
   const stripeSession = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -148,9 +153,6 @@ export async function PUT(req: Request) {
 
   order.stripeSessionId = stripeSession.id;
   await order.save();
-
-  cart.items = [];
-  await cart.save();
 
   return NextResponse.json({ url: stripeSession.url, orderId: order._id.toString() });
 }

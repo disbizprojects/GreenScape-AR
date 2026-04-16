@@ -12,13 +12,13 @@ interface PlantData {
   isManual: boolean;
   waterAmount: string;
   frequencyDays: number;
-  sensorDeviceId?: string; 
+  sensorDeviceId?: string;
 }
 
 export default function WateringSchedule() {
   const [plants, setPlants] = useState<PlantData[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Form State
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState('');
@@ -73,7 +73,7 @@ export default function WateringSchedule() {
     <div className="p-8 max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-emerald-900">Smart Watering Schedule</h1>
-        <button 
+        <button
           onClick={() => setShowForm(!showForm)}
           className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 font-semibold shadow-sm"
         >
@@ -106,7 +106,7 @@ export default function WateringSchedule() {
       {/* PLANT GRID */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {plants.map((plant) => {
-          
+
           // 🔥 THE BULLETPROOF FIX: If there is no sensorDeviceId, it is a custom manual plant!
           const isManualPlant = !plant.sensorDeviceId;
 
@@ -152,7 +152,7 @@ export default function WateringSchedule() {
                     <span>Amount: <strong className="text-gray-900">{plant.waterAmount || 'As needed'}</strong></span>
                     <span>Every: <strong className="text-gray-900">{plant.frequencyDays || 7} days</strong></span>
                   </div>
-                  
+
                   <div className={`mt-3 p-3 rounded-lg flex items-center justify-between ${isOverdue ? 'bg-red-50 text-red-800' : 'bg-emerald-50 text-emerald-800'}`}>
                     <div>
                       <span className="block text-xs uppercase tracking-wide opacity-80 mb-1">Status</span>
@@ -160,9 +160,9 @@ export default function WateringSchedule() {
                         {isOverdue ? 'Needs Water Now!' : `Water in ${daysRemaining} day${daysRemaining > 1 ? 's' : ''}`}
                       </span>
                     </div>
-                    
+
                     {/* The action button that resets the timer based on the frequency */}
-                    <button 
+                    <button
                       onClick={() => handleMarkWatered(plant._id, plant.frequencyDays || 7)}
                       className={`px-3 py-1.5 rounded text-sm font-semibold text-white shadow-sm transition-colors ${isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-500 hover:bg-emerald-600'}`}
                     >

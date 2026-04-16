@@ -17,6 +17,7 @@ export default function OrderDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [order, setOrder] = useState<Order | null>(null);
+  const [markingPaid, setMarkingPaid] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -26,15 +27,18 @@ export default function OrderDetailPage() {
     })();
   }, [id]);
 
-  async function payStripe() {
-    const res = await fetch("/api/checkout/stripe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId: id }),
-    });
-    const j = await res.json();
-    if (j.url) window.location.href = j.url;
-    else alert(j.error ?? "Could not start checkout");
+  async function completeMockPayment() {
+    setMarkingPaid(true);
+    const res = await fetch(`/api/orders/${id}/mock-pay`, { method: "POST" });
+    const j = await res.json().catch(() => ({}));
+    setMarkingPaid(false);
+
+    if (!res.ok) {
+      alert(j.error ?? "Could not complete mock payment");
+      return;
+    }
+
+    setOrder(j as Order);
   }
 
   if (!order) {
@@ -67,10 +71,11 @@ export default function OrderDetailPage() {
       {order.paymentStatus === "UNPAID" ? (
         <button
           type="button"
-          onClick={payStripe}
-          className="mt-6 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+          onClick={completeMockPayment}
+          disabled={markingPaid}
+          className="mt-6 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
         >
-          Pay with Stripe
+          {markingPaid ? "Completing…" : "Mock payment done"}
         </button>
       ) : null}
 
