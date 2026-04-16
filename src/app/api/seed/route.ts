@@ -25,7 +25,12 @@ export async function POST(req: Request) {
   await connectDB();
 
   const adminEmail = process.env.ADMIN_EMAIL ?? "admin@greenscape.local";
-  const passwordHash = await bcrypt.hash("Demo12345!", 12);
+  const adminPassword = process.env.ADMIN_PASSWORD ?? "Demo12345!";
+  const deployAdminEmail = process.env.DEPLOY_ADMIN_EMAIL ?? "admin@gs.com";
+  const deployAdminPassword = process.env.DEPLOY_ADMIN_PASSWORD ?? "admin123";
+
+  const passwordHash = await bcrypt.hash(adminPassword, 12);
+  const deployAdminPasswordHash = await bcrypt.hash(deployAdminPassword, 12);
 
   let admin = await User.findOne({ email: adminEmail });
   if (!admin) {
@@ -35,6 +40,20 @@ export async function POST(req: Request) {
       name: "GreenScape Admin",
       role: "ADMIN",
     });
+  }
+
+  let deployAdmin = await User.findOne({ email: deployAdminEmail });
+  if (!deployAdmin) {
+    deployAdmin = await User.create({
+      email: deployAdminEmail,
+      passwordHash: deployAdminPasswordHash,
+      name: "GreenScape Deployment Admin",
+      role: "ADMIN",
+    });
+  } else {
+    deployAdmin.passwordHash = deployAdminPasswordHash;
+    deployAdmin.role = "ADMIN";
+    await deployAdmin.save();
   }
 
   let vendor = await User.findOne({ email: "vendor@greenscape.local" });
@@ -131,9 +150,11 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     adminEmail,
+    deployAdminEmail,
     vendorEmail: "vendor@greenscape.local",
     customerEmail: "customer@greenscape.local",
-    password: "Demo12345!",
+    password: adminPassword,
+    deployAdminPassword,
     plantsCreated: created,
   });
 }
