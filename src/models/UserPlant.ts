@@ -22,7 +22,7 @@ const UserPlantSchema = new Schema<IUserPlant>({
   plantId: { 
     type: Schema.Types.ObjectId, 
     ref: 'Plant', 
-    required: true 
+    required: false
   },
   name: { 
     type: String, 
