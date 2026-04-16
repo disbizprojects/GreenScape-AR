@@ -17,12 +17,20 @@ export async function POST(req: Request) {
 
     // Update the specific plant's current moisture level and last sync time
     await UserPlant.findOneAndUpdate(
-      { _id: plantId, sensorDeviceId: deviceId },
+      { _id: plantId }, // Search by the 24-character ID
       { 
+        sensorDeviceId: deviceId,
         currentMoisture: moistureLevel,
-        lastSensorSync: new Date()
+        lastSensorSync: new Date(),
+        // We add some default fallback data just in case it needs to create a brand new entry
+        $setOnInsert: {
+          name: "ESP32 Test Plant",
+          idealMoisture: 60,
+          userId: "111111111111111111111111", // Dummy user ID for testing
+          plantId: "222222222222222222222222"  // Dummy catalog ID for testing
+        }
       },
-      { new: true }
+      { new: true, upsert: true } // UPSERT is the magic word here!
     );
 
     // If moisture is dangerously low, you could trigger your notification logic here
