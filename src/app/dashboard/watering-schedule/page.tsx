@@ -140,7 +140,7 @@ export default function WateringSchedule() {
                     <div className={`h-2.5 rounded-full ${needsWaterSensor ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${plant.currentMoisture}%` }}></div>
                   </div>
                   <p className={`text-sm mt-3 font-medium ${needsWaterSensor ? 'text-red-600' : 'text-emerald-600'}`}>
-                    {needsWaterSensor ? "⚠️ Soil is dry! Needs water." : "✓ Moisture is optimal."}
+                    {needsWaterSensor ? " Soil is dry! Needs water." : "✓ Moisture is optimal."}
                   </p>
                 </div>
               )}
@@ -166,7 +166,7 @@ export default function WateringSchedule() {
                       onClick={() => handleMarkWatered(plant._id, plant.frequencyDays || 7)}
                       className={`px-3 py-1.5 rounded text-sm font-semibold text-white shadow-sm transition-colors ${isOverdue ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-500 hover:bg-emerald-600'}`}
                     >
-                      💧 Mark Watered
+                      Mark Watered
                     </button>
                   </div>
                 </div>
