@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 
 interface DiseaseResult {
   source: "plant.id-live" | "mock";
@@ -61,13 +60,9 @@ export default function DiseasePage() {
       <div>
         <h1 className="text-3xl font-semibold text-emerald-950">🍃 Leaf Health Scan</h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Upload a clear photo of a leaf to detect diseases and health issues.{" "}
-          {process.env.NEXT_PUBLIC_PLANT_ID_KEY ? (
-            <span className="text-emerald-700 font-medium">Plant.id API is active</span>
-          ) : (
-            <code className="rounded bg-zinc-100 px-1 text-xs">Set PLANT_ID_API_KEY</code>
-          )}
-          {" "}for live detection.
+          Upload a clear photo of a leaf to detect diseases and health issues. Set
+          <code className="mx-1 rounded bg-zinc-100 px-1 text-xs">PLANT_ID_API_KEY</code>
+          in server env for live detection.
         </p>
       </div>
 
