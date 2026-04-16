@@ -19,12 +19,18 @@ export default function WateringSchedule() {
   useEffect(() => {
     const fetchMoistureData = async () => {
       try {
-        // You would create a GET route at /api/plants/user to fetch this
         const res = await fetch('/api/plants/user');
+        
+        // NEW: Check if the response is valid before parsing JSON
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
         const data = await res.json();
-        setPlants(data.plants);
+        setPlants(data.plants || []); // Fallback to an empty array if data.plants is undefined
+        
       } catch (error) {
-        console.error('Failed to fetch data', error);
+        console.error('Failed to fetch data:', error);
       } finally {
         setLoading(false);
       }
