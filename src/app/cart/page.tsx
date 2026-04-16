@@ -57,7 +57,7 @@ export default function CartPage() {
     const j = await res.json().catch(() => ({}));
     setCheckoutLoading(false);
     if (!res.ok) {
-      alert(j.error ?? "Checkout failed. Configure Stripe keys for live payments.");
+      alert(j.error ?? "Checkout failed.");
       return;
     }
     if (j.url) window.location.href = j.url as string;
@@ -145,11 +145,10 @@ export default function CartPage() {
               disabled={checkoutLoading}
               className="mt-6 w-full rounded-full bg-emerald-600 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
             >
-              {checkoutLoading ? "Preparing…" : "Pay with Stripe"}
+              {checkoutLoading ? "Preparing…" : "Proceed to payment"}
             </button>
             <p className="mt-3 text-xs text-zinc-500">
-              bKash and other gateways can be integrated alongside Stripe using the same order
-              records — this demo uses Stripe Checkout when keys are present.
+              Demo mode supports a mock payment completion step if Stripe is unavailable.
             </p>
           </div>
         </div>
