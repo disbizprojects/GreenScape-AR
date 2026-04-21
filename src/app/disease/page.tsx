@@ -1,9 +1,6 @@
 "use client";
 
-
 import { useState } from "react";
-import Image from "next/image";
-
 
 interface DiseaseResult {
   source: "plant.id-live" | "mock";
@@ -25,17 +22,14 @@ interface DiseaseResult {
   note?: string;
 }
 
-
 export default function DiseasePage() {
   const [result, setResult] = useState<DiseaseResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
 
     // Show preview
     const reader = new FileReader();
@@ -43,7 +37,6 @@ export default function DiseasePage() {
       setImagePreview(ev.target?.result as string);
     };
     reader.readAsDataURL(file);
-
 
     setLoading(true);
     const fd = new FormData();
@@ -62,22 +55,16 @@ export default function DiseasePage() {
     }
   }
 
-
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
       <div>
         <h1 className="text-3xl font-semibold text-emerald-950">🍃 Leaf Health Scan</h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Upload a clear photo of a leaf to detect diseases and health issues.{" "}
-          {process.env.NEXT_PUBLIC_PLANT_ID_KEY ? (
-            <span className="text-emerald-700 font-medium">Plant.id API is active</span>
-          ) : (
-            <code className="rounded bg-zinc-100 px-1 text-xs">Set PLANT_ID_API_KEY</code>
-          )}
-          {" "}for live detection.
+          Upload a clear photo of a leaf to detect diseases and health issues. Set
+          <code className="mx-1 rounded bg-zinc-100 px-1 text-xs">PLANT_ID_API_KEY</code>
+          in server env for live detection.
         </p>
       </div>
-
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
         {/* Upload Area */}
@@ -93,14 +80,12 @@ export default function DiseasePage() {
             <p className="text-xs text-zinc-500 mt-1">JPG, PNG, or WebP</p>
           </label>
 
-
           {imagePreview && (
             <div className="mt-4 rounded-lg overflow-hidden border border-emerald-200">
               <img src={imagePreview} alt="Preview" className="w-full h-auto" />
             </div>
           )}
         </div>
-
 
         {/* Results Area */}
         <div>
@@ -110,7 +95,6 @@ export default function DiseasePage() {
               <p className="text-sm text-red-700 mt-1">{result.error}</p>
             </div>
           )}
-
 
           {result && !result.error && (
             <div className="space-y-4">
@@ -134,7 +118,6 @@ export default function DiseasePage() {
                 </div>
               )}
 
-
               {/* Health Status */}
               {result.health && (
                 <div className={`rounded-xl border p-4 shadow-sm ${
@@ -154,7 +137,6 @@ export default function DiseasePage() {
                   </p>
                 </div>
               )}
-
 
               {/* Diseases */}
               {result.health?.diseases && result.health.diseases.length > 0 && (
@@ -192,7 +174,6 @@ export default function DiseasePage() {
                 </div>
               )}
 
-
               {/* API Source */}
               <p className="text-xs text-zinc-500 mt-4">
                 {result.source === "plant.id-live" ? (
@@ -205,7 +186,6 @@ export default function DiseasePage() {
           )}
         </div>
       </div>
-
 
       {/* Info Box */}
       <div className="mt-12 rounded-xl bg-emerald-50 border border-emerald-200 p-6">
@@ -224,6 +204,3 @@ export default function DiseasePage() {
     </main>
   );
 }
-
-
-
