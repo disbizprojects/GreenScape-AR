@@ -35,6 +35,7 @@ CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 ADMIN_EMAIL=admin@your-domain.com
 SEED_SECRET=<generated-secure-secret>
+ADMIN_REGISTER_SECRET=<generated-secure-secret>
 ```
 
 ### Generating Secure Secrets

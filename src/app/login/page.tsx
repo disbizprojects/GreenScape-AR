@@ -70,6 +70,9 @@ export default function LoginPage() {
           Create an account
         </Link>
       </p>
+      <p className="text-center text-xs text-zinc-500">
+        Admin access can be created from the register page using the admin secret configured by your deployment.
+      </p>
     </main>
   );
 }
