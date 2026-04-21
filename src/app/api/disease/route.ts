@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+// Precise type for the Plant.id V3 Health Assessment response
 type PlantIdDisease = {
   name?: string;
   disease_name?: string;
@@ -29,21 +30,21 @@ function mockResponse(note?: string) {
         {
           name: "Interveinal chlorosis",
           probability: 0.65,
-          treatment: "Check soil pH and micronutrients; consider chelated iron. Ensure proper drainage.",
+          treatment: "Check soil pH and micronutrients; consider iron supplements.",
           severity: "Moderate",
         },
       ],
     },
-    note: note ?? "This is a mock response. Set PLANT_ID_API_KEY in .env.local for live detection.",
+    note: note ?? "Mock response. Add PLANT_ID_API_KEY to .env.local for live API data.",
   });
 }
 
 export async function POST(req: Request) {
   const form = await req.formData();
   const file = form.get("image");
-  
+
   if (!file || !(file instanceof Blob)) {
-    return NextResponse.json({ error: "Image file required" }, { status: 400 });
+    return NextResponse.json({ error: "Image required" }, { status: 400 });
   }
 
   const key = process.env.PLANT_ID_API_KEY;
@@ -51,9 +52,13 @@ export async function POST(req: Request) {
 
   try {
     const base64Image = Buffer.from(await file.arrayBuffer()).toString("base64");
-    const payload = { images: [base64Image] };
+    const payload = { 
+      images: [base64Image],
+      // We explicitly request treatment details
+      details: ["description", "treatment", "common_names"] 
+    };
 
-    // Running requests in parallel to save time
+    // Parallel execution for better speed
     const [identRes, healthRes] = await Promise.all([
       fetch("https://api.plant.id/v3/identification", {
         method: "POST",
@@ -68,45 +73,47 @@ export async function POST(req: Request) {
     ]);
 
     if (!identRes.ok || !healthRes.ok) {
-      return mockResponse("Plant.id API returned an error. Showing mock data.");
+      return mockResponse(`API Error: ${identRes.status}/${healthRes.status}`);
     }
 
     const identData = await identRes.json();
     const healthData = await healthRes.json();
 
-    const topSuggestion = identData?.result?.classification?.suggestions?.[0];
-    const rawDiseases = healthData?.result?.disease?.suggestions || [];
+    const topPlant = identData?.result?.classification?.suggestions?.[0];
+    const healthSuggestions = healthData?.result?.disease?.suggestions || [];
 
     return NextResponse.json({
       source: "plant.id-live",
       plant: {
-        name: topSuggestion?.name ?? "Unknown Plant",
-        probability: topSuggestion?.probability ?? 0,
-        similar_images: topSuggestion?.similar_images?.length ?? 0,
+        name: topPlant?.name ?? "Unknown Plant",
+        probability: topPlant?.probability ?? 0,
+        similar_images: topPlant?.similar_images?.length ?? 0,
       },
       health: {
-        status: rawDiseases.length === 0 ? "Healthy" : "Issues detected",
-        diseases: rawDiseases.map((disease: PlantIdDisease) => {
-          // Extracting treatment steps from API details
-          const treatmentParts: string[] = [];
-          if (disease.details?.treatment?.biological) treatmentParts.push(...disease.details.treatment.biological);
-          if (disease.details?.treatment?.chemical) treatmentParts.push(...disease.details.treatment.chemical);
-          if (disease.details?.treatment?.prevention) treatmentParts.push(...disease.details.treatment.prevention);
+        status: healthSuggestions.length === 0 ? "Healthy" : "Issues detected",
+        diseases: healthSuggestions.map((disease: PlantIdDisease) => {
+          // Construct treatment string from biological, chemical, and prevention arrays
+          const treatmentArray: string[] = [];
+          const t = disease.details?.treatment;
+          
+          if (t?.biological) treatmentArray.push(...t.biological);
+          if (t?.chemical) treatmentArray.push(...t.chemical);
+          if (t?.prevention) treatmentArray.push(...t.prevention);
 
-          const prob = disease.probability || disease.confidence || 0;
+          const score = disease.probability || disease.confidence || 0;
 
           return {
             name: disease.name || disease.disease_name,
-            probability: prob,
-            treatment: treatmentParts.length > 0 
-              ? treatmentParts.join(" ") 
-              : (disease.description || "No specific treatment found."),
-            severity: prob > 0.7 ? "High" : prob > 0.4 ? "Moderate" : "Low",
+            probability: score,
+            treatment: treatmentArray.length > 0 
+              ? treatmentArray.join(" ") 
+              : (disease.description || "No specific treatment tips provided."),
+            severity: score > 0.7 ? "High" : score > 0.4 ? "Moderate" : "Low",
           };
         }),
       },
     });
   } catch (err) {
-    return mockResponse(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+    return mockResponse(err instanceof Error ? err.message : "Analysis failed");
   }
 }

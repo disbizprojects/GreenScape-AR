@@ -4,11 +4,7 @@ import { useState } from "react";
 
 interface DiseaseResult {
   source: "plant.id-live" | "mock";
-  plant?: {
-    name: string;
-    probability: number;
-    similar_images: number;
-  };
+  plant?: { name: string; probability: number; similar_images: number };
   health?: {
     status: string;
     diseases: Array<{
@@ -31,116 +27,121 @@ export default function DiseasePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Use URL.createObjectURL for better performance with large images
-    const objectUrl = URL.createObjectURL(file);
-    setImagePreview(objectUrl);
-
+    // Clean preview generation
+    const url = URL.createObjectURL(file);
+    setImagePreview(url);
     setLoading(true);
+
     const fd = new FormData();
     fd.append("image", file);
 
     try {
       const res = await fetch("/api/disease", { method: "POST", body: fd });
-      if (!res.ok) throw new Error("Failed to analyze image");
-      const j = await res.json();
-      setResult(j);
+      if (!res.ok) throw new Error("Server responded with an error");
+      const data = await res.json();
+      setResult(data);
     } catch (err) {
-      setResult({
-        source: "mock",
-        error: err instanceof Error ? err.message : "Upload failed",
-      });
+      setResult({ source: "mock", error: "Failed to connect to the server." });
     } finally {
       setLoading(false);
-      e.target.value = ""; // Reset input so same file can be uploaded again
+      e.target.value = ""; // Clear input for re-uploads
     }
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10">
-      <div>
-        <h1 className="text-3xl font-semibold text-emerald-950">🍃 Leaf Health Scan</h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          Upload a clear photo of a leaf to detect diseases and health issues.
-        </p>
-      </div>
+    <main className="mx-auto max-w-4xl px-4 py-10 font-sans">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-emerald-950 flex items-center gap-2">
+          🍃 Leaf Health Scan
+        </h1>
+        <p className="text-zinc-500 mt-1">Instant AI plant identification and disease diagnosis.</p>
+      </header>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
-        {/* Upload Area */}
-        <div>
-          <label className="flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/50 px-6 py-12 text-center hover:bg-emerald-100/50 transition">
+      <div className="grid gap-8 md:grid-cols-2">
+        {/* Input Side */}
+        <div className="space-y-4">
+          <label className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/30 p-10 text-center hover:border-emerald-400 hover:bg-emerald-50 transition-all cursor-pointer">
             <input type="file" accept="image/*" className="hidden" onChange={onFile} />
-            <svg className="h-12 w-12 text-emerald-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <p className="text-sm font-medium text-emerald-900">
-              {loading ? "Analyzing image..." : "Click to upload a leaf image"}
+            <div className="rounded-full bg-emerald-100 p-4 text-emerald-600 group-hover:scale-110 transition-transform">
+              <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            <p className="mt-4 font-medium text-emerald-900">
+              {loading ? "Analyzing Leaf..." : "Upload Plant Photo"}
             </p>
           </label>
 
           {imagePreview && (
-            <div className="mt-4 rounded-lg overflow-hidden border border-emerald-200">
-              <img src={imagePreview} alt="Preview" className="w-full h-auto" />
+            <div className="overflow-hidden rounded-2xl border border-emerald-100 shadow-sm">
+              <img src={imagePreview} alt="Preview" className="w-full h-auto object-cover" />
             </div>
           )}
         </div>
 
-        {/* Results Area */}
+        {/* Results Side */}
         <div className="space-y-4">
+          {!result && !loading && (
+            <div className="h-full flex items-center justify-center text-zinc-400 italic border border-dashed rounded-2xl p-10">
+              Upload an image to see results...
+            </div>
+          )}
+
           {result?.error && (
-            <div className="rounded-xl bg-red-50 border border-red-200 p-4">
-              <p className="text-sm font-semibold text-red-900">Error</p>
-              <p className="text-sm text-red-700 mt-1">{result.error}</p>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
+              <strong>Error:</strong> {result.error}
             </div>
           )}
 
           {result && !result.error && (
-            <>
-              {result.plant && (
-                <div className="rounded-xl bg-white border border-emerald-200 p-4 shadow-sm">
-                  <p className="text-xs font-semibold text-emerald-700 uppercase">Identified Plant</p>
-                  <p className="text-lg font-semibold text-emerald-950 mt-1">{result.plant.name}</p>
-                </div>
-              )}
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+              {/* Plant Identity */}
+              <div className="bg-white p-5 rounded-2xl border border-zinc-100 shadow-sm mb-4">
+                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Identity</span>
+                <h2 className="text-xl font-bold text-zinc-900">{result.plant?.name}</h2>
+                <p className="text-xs text-zinc-500 mt-1">Accuracy: {(result.plant!.probability * 100).toFixed(1)}%</p>
+              </div>
 
-              {result.health && (
-                <div className={`rounded-xl border p-4 shadow-sm ${
-                  result.health.status === "Healthy" ? "bg-green-50 border-green-200" : "bg-yellow-50 border-yellow-200"
+              {/* Overall Health Status */}
+              <div className={`p-5 rounded-2xl border mb-4 shadow-sm ${
+                result.health?.status === "Healthy" ? "bg-green-50 border-green-100" : "bg-orange-50 border-orange-100"
+              }`}>
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Health Condition</span>
+                <p className={`text-lg font-bold mt-1 ${
+                  result.health?.status === "Healthy" ? "text-green-800" : "text-orange-800"
                 }`}>
-                  <p className={`text-xs font-semibold uppercase ${result.health.status === "Healthy" ? "text-green-700" : "text-yellow-700"}`}>
-                    Health Status
-                  </p>
-                  <p className={`text-lg font-semibold mt-1 ${result.health.status === "Healthy" ? "text-green-950" : "text-yellow-950"}`}>
-                    {result.health.status}
-                  </p>
-                </div>
+                  {result.health?.status}
+                </p>
+              </div>
+
+              {/* Disease Details */}
+              <div className="space-y-4">
+                {result.health?.diseases.map((d, i) => (
+                  <div key={i} className="bg-white p-5 rounded-2xl border border-zinc-100 shadow-sm">
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="font-bold text-zinc-900">{d.name}</h3>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                        d.severity === "High" ? "bg-red-100 text-red-700" : 
+                        d.severity === "Moderate" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"
+                      }`}>
+                        {d.severity}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Treatment Tips</p>
+                        <p className="text-sm text-zinc-700 mt-1 leading-relaxed">{d.treatment}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {result.note && (
+                <p className="text-[10px] text-zinc-400 mt-6 text-center italic">{result.note}</p>
               )}
-
-              {result.health?.diseases?.map((disease, idx) => (
-                <div key={idx} className={`rounded-lg p-4 border ${
-                  disease.severity === "High" ? "bg-red-50 border-red-200" : 
-                  disease.severity === "Moderate" ? "bg-yellow-50 border-yellow-200" : "bg-blue-50 border-blue-200"
-                }`}>
-                  <div className="flex justify-between items-start">
-                    <p className="font-bold text-zinc-900">{disease.name}</p>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-white/50 border border-black/5 font-bold uppercase">
-                      {disease.severity}
-                    </span>
-                  </div>
-                  
-                  {/* Treatment Tips from Plant.id */}
-                  <div className="mt-3">
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Suggested Treatment</p>
-                    <p className="text-sm text-zinc-700 mt-1 leading-relaxed">
-                      {disease.treatment}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              <p className="text-xs text-zinc-400 text-center">
-                Source: {result.source === "plant.id-live" ? "Plant.id Live API" : "Development Mock Data"}
-              </p>
-            </>
+            </div>
           )}
         </div>
       </div>
