@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "create-admin": "node scripts/create-admin.js",
     "pre-deploy": "node scripts/pre-deploy-check.js",
     "pre-deploy:ci": "npm run lint && npm run pre-deploy"
   },

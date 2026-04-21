@@ -39,6 +39,21 @@ Demo logins (after seed):
 - **Vendor:** `vendor@greenscape.local` / `Demo12345!`  
 - **Customer:** `customer@greenscape.local` / `Demo12345!`  
 
+## Create an admin account manually
+
+You can create or update an admin user directly from your terminal:
+
+```bash
+MONGODB_URI="your-mongodb-uri" ADMIN_EMAIL="admin@greenscape.local" ADMIN_PASSWORD="Demo12345!" npm run create-admin
+```
+
+Optional variable: `ADMIN_NAME` (defaults to `GreenScape Admin`).
+
+Admin login URLs:
+
+- Sign in page: `/login`
+- Admin dashboard page (after login): `/admin`
+
 ## Vendor uploads (Cloudinary)
 
 Cover photos and **`.glb`** models are uploaded from **Vendor studio** via `POST /api/upload` (vendors/admins only). Add **`CLOUDINARY_CLOUD_NAME`**, **`CLOUDINARY_API_KEY`**, and **`CLOUDINARY_API_SECRET`** from the Cloudinary dashboard to `.env.local`, then restart the dev server. If Cloudinary is not set, the form shows a notice and you can still paste HTTPS URLs under **Optional: paste URL instead**.
