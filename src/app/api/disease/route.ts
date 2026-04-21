@@ -1,140 +1,176 @@
 import { NextResponse } from "next/server";
 
-type PlantIdDisease = {
-  name?: string;
-  disease_name?: string;
-  probability?: number;
-  confidence?: number;
-  description?: string;
-};
-
-function mockResponse(note?: string) {
-  return NextResponse.json({
-    source: "mock",
-    plant: {
-      name: "Monstera Deliciosa (Mock)",
-      probability: 0.95,
-      similar_images: 3,
-    },
-    health: {
-      status: "Issues detected",
-      diseases: [
-        {
-          name: "Interveinal chlorosis",
-          probability: 0.65,
-          treatment:
-            "Check soil pH and micronutrients; consider chelated iron if deficiency is confirmed.",
-          severity: "Moderate",
-        },
-        {
-          name: "Root rot (early signs)",
-          probability: 0.32,
-          treatment: "Reduce watering frequency, improve drainage, and repot if necessary.",
-          severity: "Low",
-        },
-      ],
-    },
-    note:
-      note ??
-      "This is a mock response. Set PLANT_ID_API_KEY in .env.local for live disease detection using Plant.id API.",
-  });
-}
-
 /**
- * If PLANT_ID_API_KEY is set, forwards to Plant.id identification API.
- * Otherwise returns a structured mock for local development.
- * @see https://plant.id/
+ * Disease Diagnosis + Treatment Guidance System
+ * Uses Plant.id API for:
+ * - Disease name
+ * - Severity
+ * - Treatment
+ * - Prevention
+ * - Symptoms
  */
+
 export async function POST(req: Request) {
   const form = await req.formData();
   const file = form.get("image");
+
   if (!file || !(file instanceof Blob)) {
-    return NextResponse.json({ error: "Image file required (field: image)" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Image file required (field: image)" },
+      { status: 400 }
+    );
   }
 
   const key = process.env.PLANT_ID_API_KEY;
+
   if (key) {
     try {
-      const base64Image = Buffer.from(await file.arrayBuffer()).toString("base64");
-      const payload = {
-        images: [base64Image],
-      };
+      // ================= IDENTIFICATION =================
+      const fd = new FormData();
+      fd.append("images", file);
 
-      const identRes = await fetch("https://api.plant.id/v3/identification", {
-        method: "POST",
-        headers: {
-          "Api-Key": key,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const identRes = await fetch(
+        "https://api.plant.id/v3/identification",
+        {
+          method: "POST",
+          headers: { "Api-Key": key },
+          body: fd,
+        }
+      );
 
       if (!identRes.ok) {
-        return mockResponse(
-          `Plant.id identification failed (${identRes.status}). Showing mock response.`
+        return NextResponse.json(
+          { error: "Plant identification failed", detail: await identRes.text() },
+          { status: 502 }
         );
       }
 
       const identData = await identRes.json();
 
-      const healthRes = await fetch("https://api.plant.id/v3/health_assessment", {
-        method: "POST",
-        headers: {
-          "Api-Key": key,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      // ================= HEALTH =================
+      const fd2 = new FormData();
+      fd2.append("images", file);
+
+      const healthRes = await fetch(
+        "https://api.plant.id/v3/health_assessment",
+        {
+          method: "POST",
+          headers: { "Api-Key": key },
+          body: fd2,
+        }
+      );
 
       if (!healthRes.ok) {
-        return mockResponse(
-          `Plant.id health assessment failed (${healthRes.status}). Showing mock response.`
+        return NextResponse.json(
+          { error: "Health assessment failed", detail: await healthRes.text() },
+          { status: 502 }
         );
       }
 
       const healthData = await healthRes.json();
 
-      const suggestions = identData?.result?.classification?.suggestions;
-      const topSuggestion = Array.isArray(suggestions) ? suggestions[0] : undefined;
-      const plantName = topSuggestion?.name ?? identData?.result?.is_plant?.name ?? "Unknown";
-      const plantProbability =
-        typeof topSuggestion?.probability === "number" ? topSuggestion.probability : 0;
-
-      const healthResult = healthData?.result;
-      const rawDiseases = Array.isArray(healthResult?.disease?.suggestions)
-        ? healthResult.disease.suggestions
-        : [];
+      const plantInfo = identData?.results?.[0] || {};
+      const diseases = healthData?.diseases || [];
 
       return NextResponse.json({
         source: "plant.id-live",
+
         plant: {
-          name: plantName,
-          probability: plantProbability,
-          similar_images: Array.isArray(topSuggestion?.similar_images)
-            ? topSuggestion.similar_images.length
-            : 0,
+          name: plantInfo?.plant_name || "Unknown",
+          probability: plantInfo?.probability || 0,
+          similar_images: identData?.results?.length || 0,
         },
+
         health: {
-          status: rawDiseases.length === 0 ? "Healthy" : "Issues detected",
-          diseases: rawDiseases.map((disease: PlantIdDisease) => ({
-            name: disease.name || disease.disease_name,
-            probability: disease.probability || disease.confidence || 0,
-            treatment: disease.description || "See health details",
-            severity:
-              (disease.probability || disease.confidence || 0) > 0.7
-                ? "High"
-                : (disease.probability || disease.confidence || 0) > 0.4
-                  ? "Moderate"
-                  : "Low",
-          })),
+          status: diseases.length === 0 ? "Healthy" : "Issues detected",
+
+          diseases: diseases.map((d: any) => {
+            const prob = d.probability || d.confidence || 0;
+
+            return {
+              name: d.name || d.disease_name || "Unknown Disease",
+
+              probability: prob,
+
+              severity:
+                prob > 0.7 ? "High" : prob > 0.4 ? "Medium" : "Low",
+
+              // ✅ Structured treatment
+              treatment: {
+                chemical: d.treatment?.chemical || [],
+                biological: d.treatment?.biological || [],
+                general: d.treatment?.prevention || [],
+              },
+
+              // ✅ Prevention
+              prevention:
+                d.prevention ||
+                d.treatment?.prevention ||
+                [],
+
+              // ✅ Symptoms
+              symptoms: d.symptoms || [],
+            };
+          }),
+        },
+
+        raw: {
+          identification: identData,
+          health_assessment: healthData,
         },
       });
     } catch (err) {
-      return mockResponse(
-        `Plant.id API error: ${err instanceof Error ? err.message : "Unknown error"}`
+      return NextResponse.json(
+        {
+          error: "Plant.id API error",
+          detail: err instanceof Error ? err.message : "Unknown error",
+        },
+        { status: 502 }
       );
     }
   }
 
-  return mockResponse();
+  // ================= MOCK =================
+  return NextResponse.json({
+    source: "mock",
+
+    plant: {
+      name: "Tomato (Mock)",
+      probability: 0.92,
+      similar_images: 3,
+    },
+
+    health: {
+      status: "Issues detected",
+
+      diseases: [
+        {
+          name: "Early Blight",
+          probability: 0.78,
+          severity: "High",
+
+          treatment: {
+            chemical: ["Apply fungicide (chlorothalonil)"],
+            biological: ["Use neem oil"],
+            general: ["Remove infected leaves"],
+          },
+
+          prevention: [
+            "Avoid overhead watering",
+            "Ensure proper spacing",
+            "Practice crop rotation",
+          ],
+
+          symptoms: [
+            "Brown spots with concentric rings",
+            "Yellowing leaves",
+            "Leaf drop",
+          ],
+        },
+      ],
+    },
+
+    note:
+      "Mock response. Set PLANT_ID_API_KEY in .env.local for real detection.",
+  });
 }
