@@ -39,6 +39,21 @@ Demo logins (after seed):
 - **Vendor:** `vendor@greenscape.local` / `Demo12345!`  
 - **Customer:** `customer@greenscape.local` / `Demo12345!`  
 
+## Create an admin account manually
+
+You can create or update an admin user directly from your terminal:
+
+```bash
+MONGODB_URI="your-mongodb-uri" ADMIN_EMAIL="admin@greenscape.local" ADMIN_PASSWORD="Demo12345!" npm run create-admin
+```
+
+Optional variable: `ADMIN_NAME` (defaults to `GreenScape Admin`).
+
+Admin login URLs:
+
+- Sign in page: `/login`
+- Admin dashboard page (after login): `/admin`
+
 ## Vendor uploads (Cloudinary)
 
 Cover photos and **`.glb`** models are uploaded from **Vendor studio** via `POST /api/upload` (vendors/admins only). Add **`CLOUDINARY_CLOUD_NAME`**, **`CLOUDINARY_API_KEY`**, and **`CLOUDINARY_API_SECRET`** from the Cloudinary dashboard to `.env.local`, then restart the dev server. If Cloudinary is not set, the form shows a notice and you can still paste HTTPS URLs under **Optional: paste URL instead**.
@@ -55,7 +70,49 @@ Add `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, and `STRIPE_WEBHO
 
 ## Plant disease scan
 
-Set `PLANT_ID_API_KEY` for live identification; otherwise `/api/disease` returns a structured mock response.
+The app includes an **AI-powered leaf health scanner** that detects plant diseases using plant images.
+
+### Using Plant.id API (Recommended for production)
+
+1. **Sign up at** https://plant.id/
+2. **Get your API key** from your account dashboard
+3. **Add to `.env.local`:**
+   ```env
+   PLANT_ID_API_KEY=your-api-key-here
+   ```
+4. **Features:**
+   - 🌱 Plant identification from leaf images
+   - 🔍 Automatic disease detection
+   - 💊 Treatment recommendations
+   - **Free tier:** ~100 requests/month
+
+### Testing without API Key
+
+Visit `/disease` page to test the UI with mock data. Mock response includes:
+- Sample plant identification
+- Demo disease detection
+- Treatment recommendations
+
+When `PLANT_ID_API_KEY` is set, the app switches to live detection automatically.
+
+## Watering Schedule & Email Notifications
+
+The AR Analysis workspace now features a **three-step analysis flow** with email notifications:
+
+1. **Sunlight Analysis** → Evaluates sun compatibility (Full sun, Partial shade, Full shade)
+2. **Survival Analysis** → Calculates survival percentage based on weather & location
+3. **Watering Schedule** → Generates personalized watering dates and sends an email to the user
+
+To enable email notifications:
+- Set `GMAIL_USER` and `GMAIL_PASSWORD` in `.env.local`
+- Generate a Gmail App Password (not your regular Gmail password):
+  1. Enable 2FA on your Google account
+  2. Visit https://myaccount.google.com/apppasswords
+  3. Select "Mail" and "Windows Computer"
+  4. Copy the 16-character password
+  5. Use it for `GMAIL_PASSWORD`
+
+Without Gmail credentials, the watering schedule is still created but email notifications are skipped.
 
 ## Project layout (high level)
 

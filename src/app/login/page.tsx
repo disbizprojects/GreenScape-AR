@@ -70,6 +70,15 @@ export default function LoginPage() {
           Create an account
         </Link>
       </p>
+      <p className="text-center text-sm text-zinc-600">
+        Need admin access?{" "}
+        <Link href="/register" className="font-medium text-emerald-700 hover:underline">
+          Register as admin
+        </Link>
+      </p>
+      <p className="text-center text-xs text-zinc-500">
+        Admin access can be created from the register page using the admin secret configured by your deployment.
+      </p>
     </main>
   );
 }

@@ -12,6 +12,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [becomeVendor, setBecomeVendor] = useState(false);
   const [businessName, setBusinessName] = useState("");
+  const [becomeAdmin, setBecomeAdmin] = useState(false);
+  const [adminSecret, setAdminSecret] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -28,6 +30,8 @@ export default function RegisterPage() {
         password,
         becomeVendor,
         businessName: becomeVendor ? businessName : undefined,
+        becomeAdmin,
+        adminSecret: becomeAdmin ? adminSecret : undefined,
       }),
     });
     const j = await res.json().catch(() => ({}));
@@ -44,7 +48,7 @@ export default function RegisterPage() {
     <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-16">
       <div>
         <h1 className="text-2xl font-semibold text-emerald-950">Create your account</h1>
-        <p className="mt-1 text-sm text-zinc-600">Customers and nursery vendors can register here.</p>
+        <p className="mt-1 text-sm text-zinc-600">Customers, nursery vendors, and admins can register here.</p>
       </div>
       <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
         <label className="block text-sm">
@@ -83,9 +87,31 @@ export default function RegisterPage() {
           <input
             type="checkbox"
             checked={becomeVendor}
-            onChange={(e) => setBecomeVendor(e.target.checked)}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setBecomeVendor(checked);
+              if (checked) {
+                setBecomeAdmin(false);
+                setAdminSecret("");
+              }
+            }}
           />
           I want to sell plants (nursery vendor)
+        </label>
+        <label className="flex items-center gap-2 text-sm text-zinc-700">
+          <input
+            type="checkbox"
+            checked={becomeAdmin}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setBecomeAdmin(checked);
+              if (checked) {
+                setBecomeVendor(false);
+                setBusinessName("");
+              }
+            }}
+          />
+          I want to register as admin
         </label>
         {becomeVendor ? (
           <label className="block text-sm">
@@ -95,6 +121,19 @@ export default function RegisterPage() {
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               required={becomeVendor}
+            />
+          </label>
+        ) : null}
+        {becomeAdmin ? (
+          <label className="block text-sm">
+            <span className="text-zinc-600">Admin secret</span>
+            <input
+              className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2"
+              type="password"
+              value={adminSecret}
+              onChange={(e) => setAdminSecret(e.target.value)}
+              required={becomeAdmin}
+              autoComplete="off"
             />
           </label>
         ) : null}

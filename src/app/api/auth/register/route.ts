@@ -12,8 +12,18 @@ const bodySchema = z
     name: z.string().trim().min(2, "Name must be at least 2 characters."),
     becomeVendor: z.boolean().optional(),
     businessName: z.string().optional(),
+    becomeAdmin: z.boolean().optional(),
+    adminSecret: z.string().optional(),
   })
   .superRefine((data, ctx) => {
+    if (data.becomeAdmin && data.becomeVendor) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Choose either vendor or admin registration.",
+        path: ["becomeAdmin"],
+      });
+    }
+
     if (data.becomeVendor) {
       const bn = data.businessName?.trim() ?? "";
       if (bn.length < 2) {
@@ -21,6 +31,17 @@ const bodySchema = z
           code: z.ZodIssueCode.custom,
           message: "Business name is required for nursery vendors.",
           path: ["businessName"],
+        });
+      }
+    }
+
+    if (data.becomeAdmin) {
+      const adminSecret = data.adminSecret?.trim() ?? "";
+      if (adminSecret.length < 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Admin secret is required for admin registration.",
+          path: ["adminSecret"],
         });
       }
     }
@@ -76,7 +97,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { email, password, name, becomeVendor, businessName } = parsed.data;
+  const { email, password, name, becomeVendor, businessName, becomeAdmin, adminSecret } = parsed.data;
 
   try {
     await connectDB();
@@ -86,7 +107,21 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const role = becomeVendor ? "VENDOR" : "CUSTOMER";
+    if (becomeAdmin) {
+      const configuredSecret = process.env.ADMIN_REGISTER_SECRET?.trim();
+      if (!configuredSecret) {
+        return NextResponse.json(
+          { error: "Admin registration is not configured on this server." },
+          { status: 500 }
+        );
+      }
+
+      if (adminSecret?.trim() !== configuredSecret) {
+        return NextResponse.json({ error: "Invalid admin secret." }, { status: 403 });
+      }
+    }
+
+    const role = becomeAdmin ? "ADMIN" : becomeVendor ? "VENDOR" : "CUSTOMER";
 
     const trimmedBusiness = businessName?.trim();
 
