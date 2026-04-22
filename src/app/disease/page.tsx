@@ -1,28 +1,8 @@
 "use client";
-
 import { useState } from "react";
 
-interface DiseaseResult {
-  source: "plant.id-live" | "mock";
-  plant?: {
-    name: string;
-    probability: number;
-    similar_images: number;
-  };
-  health?: {
-    status: string;
-    diseases: Array<{
-      name: string;
-      probability: number;
-      treatment: string;
-      severity: string;
-    }>;
-  };
-  error?: string;
-}
-
 export default function DiseasePage() {
-  const [result, setResult] = useState<DiseaseResult | null>(null);
+  const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -32,71 +12,54 @@ export default function DiseasePage() {
 
     setImagePreview(URL.createObjectURL(file));
     setLoading(true);
-    
+
     const fd = new FormData();
     fd.append("image", file);
-
     try {
       const res = await fetch("/api/disease", { method: "POST", body: fd });
-      const j = await res.json();
-      setResult(j);
+      const data = await res.json();
+      setResult(data);
     } catch (err) {
-      setResult({ source: "mock", error: "Connection failed" });
+      console.error(err);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10 font-sans antialiased">
-      <div className="mb-8 border-b pb-6">
-        <h1 className="text-3xl font-bold text-emerald-950">🍃 Leaf Health Scan</h1>
-        <p className="mt-2 text-sm text-zinc-600 font-medium">Full Diagnosis & Treatment Guide</p>
-      </div>
-
+    <main className="mx-auto max-w-5xl px-4 py-10 font-sans text-zinc-900">
+      <h1 className="text-3xl font-bold text-emerald-950 mb-8 border-b pb-4">Leaf Health Report</h1>
+      
       <div className="grid gap-10 md:grid-cols-2">
-        {/* Upload Section */}
         <div className="space-y-4">
-          <label className="flex h-64 cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50 transition">
+          <label className="flex h-64 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 transition">
             <input type="file" accept="image/*" className="hidden" onChange={onFile} />
             <span className="text-sm font-bold text-emerald-700">
-              {loading ? "🔬 Analyzing Image..." : "📸 Upload Leaf Photo"}
+              {loading ? "Analyzing Details..." : "Upload Leaf Image"}
             </span>
           </label>
-          {imagePreview && (
-            <img src={imagePreview} className="rounded-3xl shadow-xl border-4 border-white" alt="Preview" />
-          )}
+          {imagePreview && <img src={imagePreview} className="rounded-2xl shadow-lg border-4 border-white" alt="Preview" />}
         </div>
 
-        {/* Results Section */}
         <div className="space-y-6">
-          {result?.plant && (
-            <div className="rounded-2xl bg-white border border-emerald-100 p-5 shadow-sm">
-              <h3 className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Identified Plant</h3>
-              <p className="text-xl font-bold text-zinc-900 mt-1">{result.plant.name}</p>
-            </div>
-          )}
-
-          {result?.health?.diseases?.map((disease, idx) => (
-            <div key={idx} className="bg-white rounded-3xl border border-zinc-100 shadow-lg overflow-hidden animate-in fade-in slide-in-from-bottom-4">
-              <div className="bg-zinc-900 p-4 flex justify-between items-center">
-                <h4 className="text-white font-bold">{disease.name}</h4>
-                <span className="text-[10px] bg-emerald-500 text-white px-2 py-1 rounded font-black">
-                  {(disease.probability * 100).toFixed(0)}% MATCH
-                </span>
+          {result?.health?.diseases?.map((disease: any, idx: number) => (
+            <div key={idx} className="bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden">
+              <div className="bg-emerald-600 p-4 flex justify-between items-center text-white">
+                <h3 className="font-bold">{disease.name}</h3>
+                <span className="text-xs bg-white/20 px-2 py-1 rounded">{(disease.probability * 100).toFixed(0)}% Match</span>
               </div>
-
-              <div className="p-6 space-y-4">
-                <div className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
-                  disease.severity === 'High' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-orange-50 text-orange-600 border border-orange-100'
+              
+              <div className="p-5">
+                <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase ${
+                  disease.severity === 'High' ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'
                 }`}>
-                  {disease.severity} Severity Risk
-                </div>
+                  {disease.severity} Severity
+                </span>
 
-                <div className="bg-zinc-50 p-4 rounded-2xl border border-zinc-100">
-                  <h5 className="text-[10px] font-black uppercase text-zinc-400 mb-2 tracking-wider">Expert Details & Care</h5>
-                  {/* whitespace-pre-line is vital to show the line breaks from the API */}
-                  <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line font-medium">
+                <div className="mt-4 bg-zinc-50 p-4 rounded-xl border border-zinc-100">
+                  <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Professional Treatment & Info</h4>
+                  {/* whitespace-pre-line makes the multi-line treatment tips look good */}
+                  <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-line">
                     {disease.treatment}
                   </p>
                 </div>
@@ -105,8 +68,8 @@ export default function DiseasePage() {
           ))}
 
           {!result && !loading && (
-            <div className="h-full flex items-center justify-center border-2 border-dashed rounded-3xl p-10 text-zinc-400 italic text-sm">
-              Upload a leaf photo to generate a health report.
+            <div className="text-zinc-400 italic p-10 border-2 border-dashed rounded-2xl text-center">
+              Upload a photo to see live Plant.id diagnosis and treatment.
             </div>
           )}
         </div>

@@ -5,6 +5,7 @@ type PlantIdDisease = {
   disease_name?: string;
   probability?: number;
   confidence?: number;
+  // This is what allows us to see the "Professional" details
   details?: {
     description?: string;
     treatment?: {
@@ -12,30 +13,14 @@ type PlantIdDisease = {
       chemical?: string[];
       prevention?: string[];
     };
-    cause?: string;
   };
 };
 
 function mockResponse(note?: string) {
   return NextResponse.json({
     source: "mock",
-    plant: {
-      name: "Monstera Deliciosa (Mock)",
-      probability: 0.95,
-      similar_images: 3,
-    },
-    health: {
-      status: "Issues detected",
-      diseases: [
-        {
-          name: "Interveinal chlorosis",
-          probability: 0.65,
-          treatment: "Check soil pH and micronutrients; consider chelated iron if deficiency is confirmed.",
-          severity: "Moderate",
-        }
-      ],
-    },
-    note: note ?? "Mock mode active.",
+    health: { status: "Mock Mode", diseases: [] },
+    note: note || "Check API Key"
   });
 }
 
@@ -47,17 +32,18 @@ export async function POST(req: Request) {
   }
 
   const key = process.env.PLANT_ID_API_KEY;
+
+  // Your logic: Only run if key exists, otherwise mock
   if (key) {
     try {
       const base64Image = Buffer.from(await file.arrayBuffer()).toString("base64");
       
-      // THE FIX: Added 'details' to the payload
+      // We add "details" to the payload to get the text you see in the screenshot
       const payload = {
         images: [base64Image],
         details: ["description", "treatment", "cause"], 
       };
 
-      // We run Identification and Health Assessment simultaneously
       const [identRes, healthRes] = await Promise.all([
         fetch("https://api.plant.id/v3/identification", {
           method: "POST",
@@ -71,39 +57,37 @@ export async function POST(req: Request) {
         })
       ]);
 
-      if (!identRes.ok || !healthRes.ok) {
-        return mockResponse("Plant.id API error. Showing mock response.");
-      }
-
       const identData = await identRes.json();
       const healthData = await healthRes.json();
 
-      const topSuggestion = identData?.result?.classification?.suggestions?.[0];
+      const suggestions = identData?.result?.classification?.suggestions;
+      const topSuggestion = Array.isArray(suggestions) ? suggestions[0] : undefined;
       const rawDiseases = healthData?.result?.disease?.suggestions || [];
 
       return NextResponse.json({
         source: "plant.id-live",
         plant: {
-          name: topSuggestion?.name ?? "Unknown",
+          name: topSuggestion?.name ?? "Unknown Plant",
           probability: topSuggestion?.probability ?? 0,
           similar_images: topSuggestion?.similar_images?.length ?? 0,
         },
         health: {
           status: rawDiseases.length === 0 ? "Healthy" : "Issues detected",
           diseases: rawDiseases.map((disease: PlantIdDisease) => {
-            // Logic: Combine biological, chemical, and prevention into one detailed text
-            const dt = disease.details?.treatment;
-            const treatmentText = [
-              ...(dt?.biological || []),
-              ...(dt?.chemical || []),
-              ...(dt?.prevention || [])
-            ].join(" ");
+            
+            // Combine biological, chemical, and prevention tips into one string
+            const t = disease.details?.treatment;
+            const combinedTips = [
+              ...(t?.biological || []),
+              ...(t?.chemical || []),
+              ...(t?.prevention || [])
+            ].join("\n\n");
 
             return {
               name: disease.name || disease.disease_name,
               probability: disease.probability || disease.confidence || 0,
-              // Fallback logic: Use treatment text, then description, then default text
-              treatment: treatmentText || disease.details?.description || "No specific details available.",
+              // Show treatment tips if they exist, otherwise show description
+              treatment: combinedTips || disease.details?.description || "No specific details found.",
               severity: (disease.probability || 0) > 0.7 ? "High" : (disease.probability || 0) > 0.4 ? "Moderate" : "Low",
             };
           }),
@@ -113,5 +97,6 @@ export async function POST(req: Request) {
       return mockResponse("API connection failed.");
     }
   }
+
   return mockResponse();
 }
