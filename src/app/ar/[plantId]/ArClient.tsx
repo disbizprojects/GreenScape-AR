@@ -108,7 +108,7 @@ export function ArClient({ plant }: { plant: Plant }) {
     setLoading(true);
     setErr(null);
     try {
-      const res = await fetch("/api/care/watering", {
+      const res = await fetch("/api/watering/care", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
