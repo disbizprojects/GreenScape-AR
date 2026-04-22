@@ -191,13 +191,13 @@ export default function DiseasePage() {
       <div className="mt-12 rounded-xl bg-emerald-50 border border-emerald-200 p-6">
         <h2 className="font-semibold text-emerald-950">How to use</h2>
         <ol className="mt-3 space-y-2 text-sm text-zinc-700 list-decimal list-inside">
-          <li>Take a clear photo of the affected leaf in natural light</li>
+          <li>Please take a clear photo of the affected leaf in natural light</li>
           <li>Upload the image using the form above</li>
           <li>The AI will identify the plant and detect any diseases</li>
           <li>Follow the recommended treatment and prevention steps</li>
         </ol>
         <p className="mt-4 text-xs text-zinc-600">
-          <strong>Tips:</strong> Ensure the leaf fills most of the frame, lighting is good, and the image is sharp.
+          <strong>Tips:</strong> Please ensure the leaf fills most of the frame, lighting is good, and the image is sharp.
           Diseased and healthy parts should be visible if possible.
         </p>
       </div>
