@@ -1,7 +1,9 @@
 import { authOptions } from "@/lib/auth";
+import { sendPaymentReceiptEmail } from "@/lib/email";
 import connectDB from "@/lib/mongodb";
 import Order from "@/models/Order";
 import Plant from "@/models/Plant";
+import User from "@/models/User";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
@@ -55,5 +57,25 @@ export async function POST(
   });
 
   await order.save();
+
+  const user = await User.findById(order.userId).select("email name").lean();
+  if (user?.email) {
+    try {
+      await sendPaymentReceiptEmail({
+        userEmail: user.email,
+        userName: user.name,
+        orderId: order._id.toString(),
+        total: order.total,
+        items: order.items.map((item) => ({
+          title: item.title,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        })),
+      });
+    } catch (error) {
+      console.error("Payment receipt email failed:", error);
+    }
+  }
+
   return NextResponse.json(order);
 }

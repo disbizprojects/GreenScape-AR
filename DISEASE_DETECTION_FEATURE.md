@@ -3,6 +3,7 @@
 ## Overview
 
 The plant disease detection system uses **AI-powered image analysis** to identify plants and detect diseases from leaf images. It supports both live detection via Plant.id API and mock data for development/testing.
+When live detection is available, detected diseases are passed to a free chatbot API for treatment generation.
 
 ## Features
 
@@ -10,7 +11,7 @@ The plant disease detection system uses **AI-powered image analysis** to identif
 - 🌱 **Plant Identification** - Identifies the plant species from leaf image
 - 🔍 **Disease Detection** - Detects multiple diseases and health issues
 - 📊 **Confidence Scores** - Probability percentages for each detection
-- 💊 **Treatment Recommendations** - Detailed care instructions
+- 💊 **Treatment Recommendations** - Chatbot-generated care instructions for each detected disease
 - 🎯 **Similar Images** - Shows related reference images
 
 ### Mock Mode (without API Key)
@@ -43,6 +44,7 @@ Visit: `http://localhost:3000/disease`
 For **local development** (`.env.local`):
 ```env
 PLANT_ID_API_KEY=your-api-key-here
+GEMINI_API_KEY=your-gemini-api-key-here
 ```
 
 For **production** (Vercel):
@@ -56,6 +58,7 @@ For **production** (Vercel):
 2. Visit `http://localhost:3000/disease`
 3. Upload a leaf image
 4. Should see live detection with confidence scores
+5. Treatments are generated from the detected disease list using Gemini when available
 
 ## API Response Format
 
@@ -74,7 +77,7 @@ For **production** (Vercel):
       {
         "name": "Leaf Spot",
         "probability": 0.72,
-        "treatment": "Remove affected leaves, improve air circulation...",
+        "treatment": "Remove affected leaves, improve air circulation, and apply a suitable fungicide if the spread continues.",
         "severity": "Moderate"
       }
     ]
@@ -214,6 +217,7 @@ Perfect for development and small to medium deployments.
 - Network timeout
 - Invalid API key
 - Rate limit exceeded
+- Weekly free usage exhausted
 - Check Plant.id account status
 
 ## Testing Checklist

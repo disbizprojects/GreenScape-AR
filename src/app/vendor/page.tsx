@@ -4,6 +4,24 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+type Order = {
+  _id: string;
+  total: number;
+  status: string;
+  paymentStatus: string;
+  createdAt: string;
+  items: { title: string; quantity: number; unitPrice: number }[];
+};
+
+const statusLabels: Record<string, string> = {
+  PENDING_PAYMENT: "Pending payment",
+  ORDER_CONFIRMED: "Confirmed",
+  PACKED: "Packed",
+  OUT_FOR_DELIVERY: "Out for delivery",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+};
+
 export default function VendorPage() {
   const router = useRouter();
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -13,6 +31,8 @@ export default function VendorPage() {
   const [uploadsConfigured, setUploadsConfigured] = useState<boolean | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -49,6 +69,14 @@ export default function VendorPage() {
     })();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      const res = await fetch("/api/orders");
+      const j = await res.json().catch(() => []);
+      if (res.ok) setOrders(j);
+    })();
+  }, []);
+
   const uploadFile = useCallback(
     async (file: File, kind: "cover" | "model") => {
       const setBusy = kind === "cover" ? setUploadingCover : setUploadingModel;
@@ -79,6 +107,30 @@ export default function VendorPage() {
     },
     []
   );
+
+  const updateOrder = useCallback(async (id: string, status: "PACKED" | "OUT_FOR_DELIVERY") => {
+    setUpdatingOrderId(id);
+    const note =
+      status === "PACKED"
+        ? "Packed and ready for dispatch."
+        : "Handed over to the delivery partner.";
+    const res = await fetch(`/api/orders/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status, note }),
+    });
+    setUpdatingOrderId(null);
+
+    if (res.ok) {
+      const next = await fetch("/api/orders");
+      const nextJson = await next.json().catch(() => []);
+      if (next.ok) setOrders(nextJson);
+      return;
+    }
+
+    const j = await res.json().catch(() => ({}));
+    alert(j.error ?? "Could not update order");
+  }, []);
 
   async function createPlant(e: React.FormEvent) {
     e.preventDefault();
@@ -367,6 +419,69 @@ export default function VendorPage() {
           Publish listing
         </button>
       </form>
+
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold text-emerald-950">Order handling</h2>
+        <p className="mt-1 text-sm text-zinc-600">
+          Pack orders first, then hand them over for delivery. Paid orders only can move through this flow.
+        </p>
+        <ul className="mt-4 space-y-3">
+          {orders.map((order) => (
+            <li key={order._id} className="rounded-xl border border-emerald-100 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="font-medium text-emerald-950">Order #{order._id.slice(-8)}</p>
+                  <p className="text-sm text-zinc-600">
+                    {statusLabels[order.status] ?? order.status} · {order.paymentStatus}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {order.items.length} item{order.items.length === 1 ? "" : "s"} · Created on {new Date(order.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-semibold text-emerald-900">${order.total.toFixed(2)}</p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-600">
+                {order.items.map((item) => (
+                  <span key={item.title} className="rounded-full bg-emerald-50 px-3 py-1">
+                    {item.title} × {item.quantity}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {order.paymentStatus !== "PAID" ? (
+                  <p className="text-xs text-zinc-500">Waiting for payment before packing.</p>
+                ) : order.status === "ORDER_CONFIRMED" ? (
+                  <button
+                    type="button"
+                    className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                    disabled={updatingOrderId === order._id}
+                    onClick={() => updateOrder(order._id, "PACKED")}
+                  >
+                    {updatingOrderId === order._id ? "Updating…" : "Packing complete"}
+                  </button>
+                ) : order.status === "PACKED" ? (
+                  <button
+                    type="button"
+                    className="rounded-full bg-emerald-700 px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                    disabled={updatingOrderId === order._id}
+                    onClick={() => updateOrder(order._id, "OUT_FOR_DELIVERY")}
+                  >
+                    {updatingOrderId === order._id ? "Updating…" : "Hand over to delivery man"}
+                  </button>
+                ) : (
+                  <p className="text-xs text-zinc-500">
+                    {order.status === "OUT_FOR_DELIVERY"
+                      ? "Waiting for admin delivery confirmation."
+                      : "This order is already completed or cannot be updated from here."}
+                  </p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
     </main>
   );
 }
