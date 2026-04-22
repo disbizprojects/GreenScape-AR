@@ -197,7 +197,7 @@ export default function DiseasePage() {
           <li>Follow the recommended treatment and prevention steps</li>
         </ol>
         <p className="mt-4 text-xs text-zinc-600">
-          <strong>Tips:</strong> Ensure the leaf fills most of the frame, lighting is good, and the image is sharp.
+          <strong>Tips:</strong> Please ensure the leaf fills most of the frame, lighting is good, and the image is sharp.
           Diseased and healthy parts should be visible if possible.
         </p>
       </div>
