@@ -49,27 +49,40 @@ export default function DashboardPage() {
   }, []);
 
   // Handle claiming a new device
+  // Handle claiming a new device
   const handleClaimDevice = async (e: React.FormEvent) => {
     e.preventDefault();
     setClaimError('');
     
-    const res = await fetch('/api/devices', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ serialNumber: newSerial, name: newDeviceName })
-    });
-    
-    const result = await res.json();
-    
-    if (!res.ok) {
-      setClaimError(result.error || 'Failed to claim device');
-      return;
+    try {
+      const res = await fetch('/api/devices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serialNumber: newSerial, name: newDeviceName })
+      });
+      
+      // If the server crashes and doesn't send JSON, this prevents the frontend from exploding
+      const textResponse = await res.text();
+      let result;
+      try {
+        result = JSON.parse(textResponse);
+      } catch (parseError) {
+        setClaimError(`Server Error (${res.status}): Endpoint is not responding correctly.`);
+        return;
+      }
+      
+      if (!res.ok) {
+        setClaimError(result.error || 'Failed to claim device');
+        return;
+      }
+      
+      setShowAddDevice(false);
+      setNewSerial('');
+      setNewDeviceName('');
+      fetchData(); // Refresh device list
+    } catch (err) {
+      setClaimError('Network error: Could not reach the server.');
     }
-    
-    setShowAddDevice(false);
-    setNewSerial('');
-    setNewDeviceName('');
-    fetchData(); // Refresh device list
   };
 
   // Handle unclaiming/deleting a device

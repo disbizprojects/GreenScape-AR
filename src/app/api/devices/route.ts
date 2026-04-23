@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Device from '@/models/Device';
 
-// GET all devices claimed by the user (for the Dashboard)
+// GET all devices claimed by the user
 export async function GET() {
   try {
     await connectToDatabase();
-    // In production, get this from NextAuth session
-    const userId = "111111111111111111111111"; 
+    // Using your real user ID!
+    const userId = "69e91b81b08ad2a833c86c28"; 
     const devices = await Device.find({ userId });
     return NextResponse.json({ devices }, { status: 200 });
   } catch (error) {
@@ -20,15 +20,15 @@ export async function POST(req: Request) {
   try {
     await connectToDatabase();
     const { serialNumber, name } = await req.json();
-    const userId = "111111111111111111111111"; // Dummy user ID for now
+    const userId = "69e91b81b08ad2a833c86c28"; // Using your real user ID!
 
-    // Check if device is already claimed by someone else
+    // Check if device is already claimed
     const existingDevice = await Device.findOne({ serialNumber });
     if (existingDevice) {
       return NextResponse.json({ error: 'Device already claimed!' }, { status: 400 });
     }
 
-    // Register the device to this user
+    // Register the device
     const newDevice = await Device.create({
       serialNumber,
       userId,
