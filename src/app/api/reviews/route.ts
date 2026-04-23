@@ -6,7 +6,28 @@ import Review from "@/models/Review";
 import User from "@/models/User";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { Types } from "mongoose";
 import { z } from "zod";
+
+function buildPlantOrderMatch(plantId: string, plantObjectId: Types.ObjectId) {
+  return {
+    $or: [
+      { "items.plantId": plantObjectId },
+      { "items.plantId": plantId },
+      { "items.plant": plantObjectId },
+      { "items.plant": plantId },
+    ],
+  };
+}
+
+function buildPurchaseStatusMatch() {
+  return {
+    $or: [
+      { paymentStatus: "PAID" },
+      { status: { $in: ["ORDER_CONFIRMED", "PACKED", "OUT_FOR_DELIVERY", "DELIVERED"] } },
+    ],
+  };
+}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -17,11 +38,23 @@ export async function GET(req: Request) {
   }
 
   await connectDB();
-  const reviews = await Review.find({ plantId })
-    .populate({ path: "userId", model: User, select: "name" })
-    .sort({ createdAt: -1 })
-    .limit(50)
-    .lean();
+  const reviews = await Review.find({ plantId }).sort({ createdAt: -1 }).limit(50).lean();
+
+  const userIds = Array.from(
+    new Set(
+      reviews
+        .map((review) => {
+          const id = String(review.userId ?? "");
+          return Types.ObjectId.isValid(id) ? id : null;
+        })
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+
+  const users = userIds.length
+    ? await User.find({ _id: { $in: userIds } }).select({ name: 1 }).lean()
+    : [];
+  const userNameById = new Map(users.map((user) => [user._id.toString(), user.name]));
 
   const formattedReviews = reviews.map((review) => ({
     _id: review._id.toString(),
@@ -30,13 +63,8 @@ export async function GET(req: Request) {
     photoUrls: review.photoUrls ?? [],
     createdAt: review.createdAt,
     user: {
-      id: review.userId && typeof review.userId === "object" && "_id" in review.userId
-        ? String(review.userId._id)
-        : String(review.userId),
-      name:
-        review.userId && typeof review.userId === "object" && "name" in review.userId
-          ? String(review.userId.name ?? "Anonymous")
-          : "Anonymous",
+      id: String(review.userId ?? ""),
+      name: userNameById.get(String(review.userId ?? "")) ?? "Anonymous",
     },
   }));
 
@@ -49,11 +77,23 @@ export async function GET(req: Request) {
   let hasReviewed = false;
 
   if (session?.user?.id) {
+    const plantObjectId = Types.ObjectId.isValid(plantId)
+      ? new Types.ObjectId(plantId)
+      : null;
+
+    const plantMatch = plantObjectId
+      ? buildPlantOrderMatch(plantId, plantObjectId)
+      : {
+          $or: [{ "items.plantId": plantId }, { "items.plant": plantId }],
+        };
+
     const [purchaseDoc, reviewDoc] = await Promise.all([
       Order.findOne({
-        userId: session.user.id,
-        paymentStatus: "PAID",
-        "items.plantId": plantId,
+        $and: [
+          { userId: session.user.id },
+          buildPurchaseStatusMatch(),
+          plantMatch,
+        ],
       })
         .select({ _id: 1 })
         .lean(),
@@ -107,10 +147,13 @@ export async function POST(req: Request) {
   const plant = await Plant.findById(parsed.data.plantId);
   if (!plant) return NextResponse.json({ error: "Plant not found" }, { status: 404 });
 
+  const plantId = plant._id.toString();
   const purchased = await Order.findOne({
-    userId: session.user.id,
-    paymentStatus: "PAID",
-    "items.plantId": plant._id,
+    $and: [
+      { userId: session.user.id },
+      buildPurchaseStatusMatch(),
+      buildPlantOrderMatch(plantId, plant._id),
+    ],
   }).lean();
 
   if (!purchased) {

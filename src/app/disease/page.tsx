@@ -168,11 +168,28 @@ export default function DiseasePage() {
                       <p className="text-xs text-zinc-600 mt-2">
                         Probability: {(disease.probability * 100).toFixed(1)}%
                       </p>
-                      <p className="text-xs text-zinc-700 mt-2">{disease.treatment}</p>
+                      <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-800">
+                          Recommended Solution
+                        </p>
+                        <p className="mt-1 text-sm text-emerald-950">
+                          {disease.treatment || "No treatment text received. Please retry with a clearer leaf photo."}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
+
+              {result.health?.status === "Issues detected" &&
+              (!result.health.diseases || result.health.diseases.length === 0) ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-sm font-semibold text-amber-900">No disease suggestions were returned</p>
+                  <p className="mt-1 text-sm text-amber-800">
+                    Try uploading a closer leaf image with good lighting so treatment recommendations can be generated.
+                  </p>
+                </div>
+              ) : null}
 
               {/* API Source */}
               <p className="text-xs text-zinc-500 mt-4">

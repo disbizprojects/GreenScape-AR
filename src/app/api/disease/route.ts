@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { diseaseData } from "@/lib/deseaseData";
 
 
 type PlantIdDisease = {
@@ -33,11 +34,62 @@ function freeTierLimitResponse() {
   return NextResponse.json({ error: FREE_TIER_LIMIT_MESSAGE }, { status: 429 });
 }
 
+function findKnowledgeTreatment(diseaseName: string): string | null {
+  const normalized = diseaseName.trim().toLowerCase();
+  const match = diseaseData.find((item) =>
+    item.keywords.some((keyword) => normalized.includes(keyword.toLowerCase()))
+  );
+
+  if (!match) return null;
+  return `${match.treatment} Prevention: ${match.prevention}`;
+}
+
 function fallbackTreatment(diseaseName: string, description?: string) {
+  const fromKnowledge = findKnowledgeTreatment(diseaseName);
+  if (fromKnowledge) return fromKnowledge;
+
   return (
     description ||
     `Monitor ${diseaseName.toLowerCase()} closely, improve airflow, and follow the plant care guidance for this condition.`
   );
+}
+
+function parseGeminiTreatments(text: string): z.infer<typeof treatmentSchema> | null {
+  try {
+    const direct = treatmentSchema.safeParse(JSON.parse(text));
+    if (direct.success) return direct.data;
+  } catch {
+    // Continue to fallback parsing strategies.
+  }
+
+  const wrapped = text.match(/\{[\s\S]*\}/);
+  if (wrapped) {
+    try {
+      const parsed = treatmentSchema.safeParse(JSON.parse(wrapped[0]));
+      if (parsed.success) return parsed.data;
+    } catch {
+      // Ignore malformed wrapped JSON and continue.
+    }
+  }
+
+  try {
+    const asArray = z
+      .array(
+        z.object({
+          name: z.string(),
+          treatment: z.string(),
+        })
+      )
+      .safeParse(JSON.parse(text));
+
+    if (asArray.success) {
+      return { treatments: asArray.data };
+    }
+  } catch {
+    // No valid array JSON found.
+  }
+
+  return null;
 }
 
 async function generateTreatments(
@@ -102,8 +154,8 @@ Write treatments that are specific, safe, and actionable. Do not include markdow
       }));
     }
 
-    const parsed = treatmentSchema.safeParse(JSON.parse(text));
-    if (!parsed.success) {
+    const parsed = parseGeminiTreatments(text);
+    if (!parsed) {
       return diseases.map((disease) => ({
         ...disease,
         treatment: disease.treatment || fallbackTreatment(disease.name, disease.treatment),
@@ -111,7 +163,7 @@ Write treatments that are specific, safe, and actionable. Do not include markdow
     }
 
     const treatmentsByName = new Map(
-      parsed.data.treatments.map((item) => [item.name.trim().toLowerCase(), item.treatment.trim()])
+      parsed.treatments.map((item) => [item.name.trim().toLowerCase(), item.treatment.trim()])
     );
 
     return diseases.map((disease) => ({

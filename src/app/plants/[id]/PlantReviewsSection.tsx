@@ -32,6 +32,74 @@ type ReviewResponse = {
   };
 };
 
+function isReviewItem(value: unknown): value is ReviewItem {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<ReviewItem>;
+  return (
+    typeof item._id === "string" &&
+    typeof item.rating === "number" &&
+    typeof item.comment === "string" &&
+    typeof item.createdAt === "string" &&
+    Array.isArray(item.photoUrls) &&
+    Boolean(item.user) &&
+    typeof item.user?.name === "string"
+  );
+}
+
+function toSafeResponse(payload: unknown): ReviewResponse {
+  const defaultResponse: ReviewResponse = {
+    reviews: [],
+    stats: { count: 0, averageRating: 0 },
+    eligibility: {
+      signedIn: false,
+      hasPurchased: false,
+      hasReviewed: false,
+      canReview: false,
+    },
+  };
+
+  if (Array.isArray(payload)) {
+    const reviews = payload.filter(isReviewItem);
+    const total = reviews.reduce((acc, review) => acc + review.rating, 0);
+    return {
+      ...defaultResponse,
+      reviews,
+      stats: {
+        count: reviews.length,
+        averageRating: reviews.length ? Number((total / reviews.length).toFixed(1)) : 0,
+      },
+    };
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return defaultResponse;
+  }
+
+  const candidate = payload as Partial<ReviewResponse> & { reviews?: unknown };
+  const reviews = Array.isArray(candidate.reviews)
+    ? candidate.reviews.filter(isReviewItem)
+    : [];
+
+  return {
+    reviews,
+    stats: {
+      count: typeof candidate.stats?.count === "number" ? candidate.stats.count : reviews.length,
+      averageRating:
+        typeof candidate.stats?.averageRating === "number"
+          ? candidate.stats.averageRating
+          : reviews.length
+            ? Number((reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length).toFixed(1))
+            : 0,
+    },
+    eligibility: {
+      signedIn: Boolean(candidate.eligibility?.signedIn),
+      hasPurchased: Boolean(candidate.eligibility?.hasPurchased),
+      hasReviewed: Boolean(candidate.eligibility?.hasReviewed),
+      canReview: Boolean(candidate.eligibility?.canReview),
+    },
+  };
+}
+
 function Star({ filled }: { filled: boolean }) {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
@@ -88,8 +156,8 @@ export function PlantReviewsSection({ plantId }: { plantId: string }) {
       return;
     }
 
-    const data = (await res.json()) as ReviewResponse;
-    setResponse(data);
+    const data = await res.json();
+    setResponse(toSafeResponse(data));
     setLoading(false);
   }, [plantId]);
 
