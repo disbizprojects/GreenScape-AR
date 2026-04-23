@@ -1,4 +1,5 @@
 import { AddToCartButton } from "./AddToCartButton";
+import { PlantReviewsSection } from "./PlantReviewsSection";
 import connectDB from "@/lib/mongodb";
 import Plant from "@/models/Plant";
 import Image from "next/image";
@@ -71,6 +72,7 @@ export default async function PlantDetailPage({ params }: Props) {
           ) : null}
         </div>
       </div>
+      <PlantReviewsSection plantId={plant._id.toString()} />
     </main>
   );
 }
