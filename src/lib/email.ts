@@ -182,3 +182,70 @@ export async function sendCareReminderEmail(
     html: emailContent,
   });
 }
+
+/**
+ * Send an order confirmation and digital invoice
+ */
+export async function sendOrderConfirmationEmail(
+  userEmail: string,
+  userName: string,
+  orderId: string,
+  items: { name: string; quantity: number; price: number }[],
+  totalAmount: number,
+  paymentMethod: string // e.g., "Mock bKash" or "Mock Stripe"
+) {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPassword = process.env.GMAIL_PASSWORD;
+
+  if (!gmailUser || !gmailPassword) return;
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: gmailUser, pass: gmailPassword },
+  });
+
+  // Generate the list of items for the email HTML
+  const itemsHtml = items.map(item => `
+    <tr>
+      <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.name} x${item.quantity}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">৳${(item.price * item.quantity).toFixed(2)}</td>
+    </tr>
+  `).join('');
+
+  const emailContent = `
+    <html>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #059669; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">🧾 Payment Successful!</h1>
+          </div>
+          
+          <div style="border: 1px solid #e5e7eb; border-top: none; padding: 20px; border-radius: 0 0 8px 8px;">
+            <p>Hi <strong>${userName}</strong>,</p>
+            <p>Thank you for your purchase! Your payment via <strong>${paymentMethod}</strong> was successful. We are getting your plants ready for shipment.</p>
+            
+            <div style="background-color: #f9fafb; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <h3 style="margin-top: 0; color: #059669; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px;">Invoice #${orderId.slice(-6).toUpperCase()}</h3>
+              <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                ${itemsHtml}
+                <tr>
+                  <td style="padding: 12px 8px; font-weight: bold;">Total Paid</td>
+                  <td style="padding: 12px 8px; font-weight: bold; text-align: right; color: #059669;">৳${totalAmount.toFixed(2)}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <p style="font-size: 14px; color: #666;">You can track your order status from your GreenScape dashboard.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  await transporter.sendMail({
+    from: `"GreenScape AR" <${gmailUser}>`,
+    to: userEmail,
+    subject: `Receipt for Order #${orderId.slice(-6).toUpperCase()}`,
+    html: emailContent,
+  });
+}
