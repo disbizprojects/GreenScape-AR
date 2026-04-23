@@ -124,3 +124,61 @@ export async function sendWateringReminderEmail(
 
   await transporter.sendMail(mailOptions);
 }
+
+/**
+ * Send a generic care reminder email (Fertilizing, Pruning, etc.)
+ */
+export async function sendCareReminderEmail(
+  userEmail: string,
+  userName: string,
+  plantName: string,
+  careType: "Fertilize" | "Prune" | "Seasonal Care"
+) {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPassword = process.env.GMAIL_PASSWORD;
+
+  if (!gmailUser || !gmailPassword) return;
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: gmailUser, pass: gmailPassword },
+  });
+
+  // Assign colors and emojis based on the task
+  const styles = {
+    "Fertilize": { color: "#f59e0b", emoji: "🧪", text: "Time to feed" },
+    "Prune": { color: "#8b5cf6", emoji: "✂️", text: "Time to trim" },
+    "Seasonal Care": { color: "#ec4899", emoji: "🍂", text: "Seasonal checkup for" }
+  };
+  const style = styles[careType];
+
+  const emailContent = `
+    <html>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: ${style.color}; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h1 style="margin: 0; font-size: 24px;">${style.emoji} ${careType} Reminder</h1>
+          </div>
+          
+          <p>Hi <strong>${userName}</strong>,</p>
+          <p>${style.text} your <strong>${plantName}</strong>!</p>
+          
+          <div style="background-color: #f3f4f6; padding: 15px; border-left: 4px solid ${style.color}; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0;">Regular ${careType.toLowerCase()}ing ensures your plant grows strong and healthy. Log into your GreenScape dashboard to mark this task as complete!</p>
+          </div>
+          
+          <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 12px;">
+            Best regards,<br/><strong>GreenScape AR Team</strong>
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  await transporter.sendMail({
+    from: gmailUser,
+    to: userEmail,
+    subject: `${style.emoji} Time to ${careType}: ${plantName}`,
+    html: emailContent,
+  });
+}

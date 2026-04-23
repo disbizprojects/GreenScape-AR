@@ -107,7 +107,7 @@ export default function WateringSchedule() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {plants.map((plant) => {
 
-          // 🔥 THE BULLETPROOF FIX: If there is no sensorDeviceId, it is a custom manual plant!
+          //  THE BULLETPROOF FIX: If there is no sensorDeviceId, it is a custom manual plant!
           const isManualPlant = !plant.sensorDeviceId;
 
           // Time logic for Manual Plants

@@ -32,13 +32,24 @@ export async function POST(req: Request) {
     };
     await device.save();
 
-    // 3. WATERING SCHEDULE LINK: If this sensor is stuck into a specific plant, update that plant's moisture!
-    if (device.linkedPlantId) {
-      await UserPlant.findByIdAndUpdate(device.linkedPlantId, {
+    // 3. WATERING SCHEDULE LINK: Auto-sync moisture to the Watering Schedule
+    // This finds the plant linked to this specific ESP32 and updates it. 
+    // If it doesn't exist yet, 'upsert: true' automatically creates it!
+    await UserPlant.findOneAndUpdate(
+      { sensorDeviceId: serialNumber }, 
+      {
         currentMoisture: moisture,
-        lastSensorSync: new Date()
-      });
-    }
+        lastSensorSync: new Date(),
+        $setOnInsert: {
+          name: `${device.name} (Auto-Linked)`,
+          isManual: false,
+          idealMoisture: 60,
+          nextWateringDate: new Date(),
+          userId: "111111111111111111111111", // Dummy user ID for testing
+        }
+      },
+      { upsert: true, new: true }
+    );
 
     return NextResponse.json({ success: true, message: 'Telemetry securely logged' }, { status: 200 });
   } catch (error) {

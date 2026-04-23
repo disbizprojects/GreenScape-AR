@@ -9,6 +9,13 @@ export interface IUserPlant extends Document {
   currentMoisture: number;           // Real-time moisture (0-100)
   idealMoisture: number;             // Target moisture before watering is needed
   nextWateringDate: Date;            // Calculated prediction
+  nextFertilizingDate?: Date;        // Predicted next fertilizing date
+  nextPruningDate?: Date;            // Predicted next pruning date
+  remindersSent?: {                  // Tracks when reminders were last sent
+    watering?: Date;
+    fertilizing?: Date;
+    pruning?: Date;
+  };
   lastSensorSync?: Date;             // Timestamp of the last ESP32 ping
 }
 
@@ -48,6 +55,16 @@ const UserPlantSchema = new Schema<IUserPlant>({
     type: Date, 
     required: true,
     default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Default 7 days from now
+  },
+  // Add these right below nextWateringDate
+  nextFertilizingDate: { type: Date },
+  nextPruningDate: { type: Date },
+  
+  // To stop the system from spamming emails every hour once a date passes
+  remindersSent: {
+    watering: { type: Date },
+    fertilizing: { type: Date },
+    pruning: { type: Date }
   },
   lastSensorSync: { 
     type: Date 
