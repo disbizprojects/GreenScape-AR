@@ -17,6 +17,8 @@ export default function CartPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  
+  // Shipping Address State
   const [line1, setLine1] = useState("");
   const [city, setCity] = useState("");
   const [postalCode, setPostalCode] = useState("");
@@ -35,34 +37,45 @@ export default function CartPage() {
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
 
+  // --- UPDATED CHECKOUT FUNCTION ---
   async function checkout() {
     if (!line1 || !city || !postalCode) {
       alert("Please fill shipping address fields.");
       return;
     }
+    
     setCheckoutLoading(true);
-    const res = await fetch("/api/checkout/stripe", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        shippingAddress: {
-          label: "Default",
-          line1,
-          city,
-          postalCode,
-          country,
-        },
-      }),
-    });
-    const j = await res.json().catch(() => ({}));
-    setCheckoutLoading(false);
-    if (!res.ok) {
-      alert(j.error ?? "Checkout failed.");
-      return;
+    
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: "69e91b81b08ad2a833c86c28", // Your actual MongoDB User ID
+          paymentMethod: "Mock bKash",
+          totalAmount: subtotal,             // Uses the actual cart total
+          items: items,                      // Uses the actual items array from state
+          shippingAddress: `${line1}, ${city}, ${postalCode}, ${country}` // Combines address into a single string
+        }),
+      });
+
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        alert("Payment Successful! Check your email for the receipt.");
+        // Redirect the user to their dashboard or order history
+        router.push("/dashboard"); 
+      } else {
+        alert(data.error || "Checkout failed.");
+      }
+    } catch (error) {
+      console.error("Payment failed:", error);
+      alert("Network error. Please try again.");
+    } finally {
+      setCheckoutLoading(false);
     }
-    if (j.url) window.location.href = j.url as string;
-    else router.push(`/orders/${j.orderId}`);
   }
+  // ----------------------------------
 
   if (loading) {
     return (
@@ -90,7 +103,7 @@ export default function CartPage() {
               <div>
                 <p className="font-medium text-emerald-950">{i.name}</p>
                 <p className="text-sm text-zinc-600">
-                  ${i.price.toFixed(2)} × {i.quantity}
+                  ৳{i.price.toFixed(2)} × {i.quantity}
                 </p>
               </div>
               <button
@@ -106,7 +119,7 @@ export default function CartPage() {
             </div>
           ))}
           <p className="text-right text-lg font-semibold text-emerald-900">
-            Subtotal: ${subtotal.toFixed(2)}
+            Subtotal: ৳{subtotal.toFixed(2)}
           </p>
 
           <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
@@ -145,11 +158,8 @@ export default function CartPage() {
               disabled={checkoutLoading}
               className="mt-6 w-full rounded-full bg-emerald-600 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
             >
-              {checkoutLoading ? "Preparing…" : "Proceed to payment"}
+              {checkoutLoading ? "Processing Payment…" : "Pay with bKash (Mock)"}
             </button>
-            <p className="mt-3 text-xs text-zinc-500">
-              Demo mode supports a mock payment completion step if Stripe is unavailable.
-            </p>
           </div>
         </div>
       )}

@@ -37,6 +37,11 @@
       "source": "/robots.txt",
       "destination": "/api/robots"
     }
-
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/daily-reminders",
+      "schedule": "1 0 * * *"
+    }
   ]
 }
