@@ -19,6 +19,7 @@ interface DeviceData {
 }
 
 export default function DashboardPage() {
+  // Analytics State
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   
   // Hardware State
@@ -30,13 +31,13 @@ export default function DashboardPage() {
 
   // Fetch both Analytics and Devices on load
   const fetchData = async () => {
-    // 1. Fetch Analytics (Existing)
+    // 1. Fetch Analytics
     const resAnalytics = await fetch("/api/analytics");
     if (resAnalytics.ok) {
       setData(await resAnalytics.json());
     }
     
-    // 2. Fetch Hardware Devices (New)
+    // 2. Fetch Hardware Devices
     const resDevices = await fetch("/api/devices");
     if (resDevices.ok) {
       const devData = await resDevices.json();
@@ -49,7 +50,6 @@ export default function DashboardPage() {
   }, []);
 
   // Handle claiming a new device
-  // Handle claiming a new device
   const handleClaimDevice = async (e: React.FormEvent) => {
     e.preventDefault();
     setClaimError('');
@@ -61,7 +61,6 @@ export default function DashboardPage() {
         body: JSON.stringify({ serialNumber: newSerial, name: newDeviceName })
       });
       
-      // If the server crashes and doesn't send JSON, this prevents the frontend from exploding
       const textResponse = await res.text();
       let result;
       try {
@@ -95,7 +94,9 @@ export default function DashboardPage() {
   };
 
   if (!data) {
-    return <main className="mx-auto max-w-4xl px-4 py-16 text-center text-zinc-500">Loading…</main>;
+    return (
+      <main className="mx-auto max-w-4xl px-4 py-16 text-center text-zinc-500">Loading…</main>
+    );
   }
 
   const role = data.role as string;
@@ -103,35 +104,91 @@ export default function DashboardPage() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
       
-      {/* --- EXISTING GARDENING ANALYTICS --- */}
+      {/* --- GARDENING ANALYTICS --- */}
       <h1 className="text-2xl font-semibold text-emerald-950">Gardening analytics</h1>
       <p className="mt-1 text-sm text-zinc-600 mb-8">
         Impact estimates are illustrative — tune coefficients with your agronomy data.
       </p>
 
-      {/* ... Role-Based Analytics Blocks (Kept exactly as you had them) ... */}
+      {/* CUSTOMER ANALYTICS */}
       {role === "CUSTOMER" ? (
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
             <p className="text-sm text-zinc-500">Plants purchased</p>
-            <p className="mt-1 text-3xl font-semibold text-emerald-900">{String(data.plantsPurchased ?? 0)}</p>
+            <p className="mt-1 text-3xl font-semibold text-emerald-900">
+              {String(data.plantsPurchased ?? 0)}
+            </p>
           </div>
           <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
             <p className="text-sm text-zinc-500">Est. CO₂ offset (kg/yr)</p>
-            <p className="mt-1 text-3xl font-semibold text-emerald-900">{String(data.estimatedCo2KgPerYear ?? 0)}</p>
+            <p className="mt-1 text-3xl font-semibold text-emerald-900">
+              {String(data.estimatedCo2KgPerYear ?? 0)}
+            </p>
           </div>
           <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
             <p className="text-sm text-zinc-500">Water estimate (L/yr)</p>
-            <p className="mt-1 text-3xl font-semibold text-emerald-900">{String(data.waterLitersEstimateYear ?? 0)}</p>
+            <p className="mt-1 text-3xl font-semibold text-emerald-900">
+              {String(data.waterLitersEstimateYear ?? 0)}
+            </p>
           </div>
           <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
             <p className="text-sm text-zinc-500">Active care plans</p>
-            <p className="mt-1 text-3xl font-semibold text-emerald-900">{String(data.carePlans ?? 0)}</p>
+            <p className="mt-1 text-3xl font-semibold text-emerald-900">
+              {String(data.carePlans ?? 0)}
+            </p>
+          </div>
+          <div className="sm:col-span-2 rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/40 p-5 text-sm text-zinc-700">
+            {String(data.survivalHint ?? "")}
           </div>
         </div>
       ) : null}
 
-      {/* --- NEW: SMART HARDWARE DASHBOARD --- */}
+      {/* VENDOR ANALYTICS */}
+      {role === "VENDOR" ? (
+        <div className="mt-8 space-y-4">
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+            <p className="text-sm text-zinc-500">Units sold (your plants)</p>
+            <p className="mt-1 text-3xl font-semibold text-emerald-900">
+              {String(data.totalUnitsSold ?? 0)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+            <p className="font-semibold text-emerald-950">Top listings</p>
+            <ul className="mt-2 text-sm text-zinc-700">
+              {(data.topPlants as { name: string; sold: number }[] | undefined)?.map((r) => (
+                <li key={r.name} className="flex justify-between border-b border-emerald-50 py-1">
+                  <span>{r.name}</span>
+                  <span>{r.sold} sold</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ADMIN ANALYTICS */}
+      {role === "ADMIN" ? (
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+            <p className="text-sm text-zinc-500">Users</p>
+            <p className="mt-1 text-3xl font-semibold">{String(data.users ?? 0)}</p>
+          </div>
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+            <p className="text-sm text-zinc-500">Active plants</p>
+            <p className="mt-1 text-3xl font-semibold">{String(data.activePlants ?? 0)}</p>
+          </div>
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+            <p className="text-sm text-zinc-500">Paid orders</p>
+            <p className="mt-1 text-3xl font-semibold">{String(data.paidOrders ?? 0)}</p>
+          </div>
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+            <p className="text-sm text-zinc-500">Revenue (recorded)</p>
+            <p className="mt-1 text-3xl font-semibold">${String(data.revenue ?? 0)}</p>
+          </div>
+        </div>
+      ) : null}
+
+      {/* --- SMART HARDWARE DASHBOARD --- */}
       <div className="mt-16 pt-8 border-t border-emerald-100">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold text-emerald-950">My Smart Hardware</h2>
@@ -222,25 +279,18 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* --- EXISTING NAVIGATION LINKS --- */}
+      {/* --- NAVIGATION LINKS --- */}
       <div className="mt-12 pt-6 border-t border-emerald-100 flex flex-wrap items-center gap-4 text-sm">
         <Link href="/dashboard/watering-schedule" className="rounded-md bg-blue-100 px-4 py-2 font-semibold text-blue-800 hover:bg-blue-200 flex items-center gap-2 shadow-sm">
            Smart Watering Schedule
         </Link>
-        <Link href="/orders" className="text-emerald-700 hover:underline px-2">Orders</Link>
-        <Link href="/profile" className="text-emerald-700 hover:underline px-2">Profile & addresses</Link>
-        <Link href="/plants" className="text-emerald-700 hover:underline px-2">Browse plants</Link>
-        </div>
-      ) : null}
-
-      <div className="mt-10 flex flex-wrap gap-3 text-sm">
-        <Link href="/orders" className="text-emerald-700 hover:underline">
+        <Link href="/orders" className="text-emerald-700 hover:underline px-2">
           Orders
         </Link>
-        <Link href="/profile" className="text-emerald-700 hover:underline">
+        <Link href="/profile" className="text-emerald-700 hover:underline px-2">
           Profile & addresses
         </Link>
-        <Link href="/plants" className="text-emerald-700 hover:underline">
+        <Link href="/plants" className="text-emerald-700 hover:underline px-2">
           Browse plants
         </Link>
       </div>
