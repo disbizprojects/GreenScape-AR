@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import React, { FormEvent } from 'react';
 
 // Added sensorDeviceId so TypeScript knows it might exist
 interface PlantData {
