@@ -88,16 +88,44 @@ export default function WateringSchedule() {
           <h2 className="text-xl font-semibold mb-4 text-emerald-900">Add Custom Plant</h2>
           <div className="grid gap-4 md:grid-cols-3 mb-4">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Plant Name</label>
-              <input required type="text" value={newName} onChange={e => setNewName(e.target.value)} className="w-full p-2 border rounded-md" placeholder="e.g., Office Fern" />
+              <label htmlFor="plant-name" className="block text-sm text-gray-600 mb-1">Plant Name</label>
+              <input
+                id="plant-name"
+                title="Enter the plant name"
+                required
+                type="text"
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                className="w-full p-2 border rounded-md"
+                placeholder="e.g., Office Fern"
+              />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Water Amount</label>
-              <input required type="text" value={newAmount} onChange={e => setNewAmount(e.target.value)} className="w-full p-2 border rounded-md" placeholder="e.g., 500ml or 1 Cup" />
+              <label htmlFor="water-amount" className="block text-sm text-gray-600 mb-1">Water Amount</label>
+              <input
+                id="water-amount"
+                title="Enter the amount of water"
+                required
+                type="text"
+                value={newAmount}
+                onChange={e => setNewAmount(e.target.value)}
+                className="w-full p-2 border rounded-md"
+                placeholder="e.g., 500ml or 1 Cup"
+              />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Water Every (Days)</label>
-              <input required type="number" min="1" value={newFreq} onChange={e => setNewFreq(Number(e.target.value))} className="w-full p-2 border rounded-md" />
+              <label htmlFor="water-frequency" className="block text-sm text-gray-600 mb-1">Water Every (Days)</label>
+              <input
+                id="water-frequency"
+                title="Enter the watering frequency in days"
+                required
+                type="number"
+                min="1"
+                value={newFreq}
+                onChange={e => setNewFreq(Number(e.target.value))}
+                className="w-full p-2 border rounded-md"
+                placeholder="7"
+              />
             </div>
           </div>
           <button type="submit" className="bg-emerald-600 text-white px-6 py-2 rounded-md hover:bg-emerald-700 font-medium">Save Plant</button>
